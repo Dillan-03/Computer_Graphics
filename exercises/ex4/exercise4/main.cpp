@@ -182,26 +182,30 @@ int main() try
 	// GLuint vao = create_vao( testCone );
 	// std::size_t cone = testCone.positions.size();
 
-	auto xcyl = make_cylinder( true, 16, {1.f, 0.f, 0.f},
-		make_scaling( 5.f, 0.1f, 0.1f )
-	);
-	// GLuint cyclinderVao = create_vao( xcyl );
+	auto xcyl = make_cylinder(true, 16, {1.f, 0.f, 0.f}, 
+					make_scaling(5.f, 0.1f, 0.1f));
+	auto xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
+					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
+	auto xarrow = concatenate(std::move(xcyl), xcone);
 
-	// std::size_t cyclindervertexCount = xcyl.positions.size();
+	auto ycyl = make_cylinder(true, 16, {0.f, 1.f, 0.f}, 
+					make_scaling(0.1f, 5.f, 0.1f)*make_rotation_z(3.1415926f / 2));
+	auto ycone = make_cone( true, 16, {0.f, 0.f, 0.f}, 
+    				make_scaling(0.3f, 1.f, 0.3f) * make_translation({0.f, 5.f, 0.f})*make_rotation_z(3.1415926f / 2) );
+	auto yarrow = concatenate(std::move(ycyl), ycone);
 
-	auto xcone = make_cone( true, 16, {0.f, 0.f, 0.f},
-		make_scaling( 1.f, 0.3f, 0.3f ) * make_translation( { 5.f, 0.f, 0.f } )
-	);
+	auto zcyl = make_cylinder(true, 16, {0.f, 0.f, 1.f}, 
+    				make_scaling(0.1f, 0.1f, 5.f)*make_rotation_y(3.1415926f / 2));
+	// Cone for the tip of the arrow, positioned at the end of the cylinder
+	auto zcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
+    				make_scaling(0.3f, 0.3f, 1.f) * make_translation({0.f, 0.f, 5.f})*make_rotation_y(3.1415926f / 2));
+	auto zarrow = concatenate(std::move(zcyl), zcone);
 
-	// GLuint coneVao = create_vao( xcone );
 
-	// std::size_t coneVertexCounts = xcyl.positions.size();
-	
+	auto allArrows = concatenate(concatenate(std::move(xarrow), yarrow), zarrow);
 
-	auto xarrow = concatenate( std::move(xcyl), xcone );
-	GLuint vao = create_vao( xarrow );
-	std::size_t VertexCounts = xarrow.positions.size();
-
+	GLuint vao = create_vao(allArrows); 
+	std::size_t vertexCount = allArrows.positions.size();
 
 
 	
