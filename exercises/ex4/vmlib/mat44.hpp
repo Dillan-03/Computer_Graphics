@@ -141,6 +141,8 @@ inline Mat44f make_rotation_y( float aAngle ) noexcept
 	
 }
 
+
+
 inline
 Mat44f make_rotation_z( float aAngle ) noexcept
 {
@@ -156,6 +158,20 @@ Mat44f make_rotation_z( float aAngle ) noexcept
     result(1, 1) = c;
 
     return result;
+
+}
+
+inline 
+Mat44f make_scaling( float aSX, float aSY, float aSZ ) noexcept{
+
+    Mat44f result = kIdentity44f;
+
+    result(0, 0) = aSX;
+    result(1, 1) = aSY;
+    result(2, 2) = aSZ;
+
+    return result;
+
 
 }
 

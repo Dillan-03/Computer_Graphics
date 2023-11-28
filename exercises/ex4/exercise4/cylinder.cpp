@@ -9,6 +9,7 @@ SimpleMeshData make_cylinder( bool aCapped, std::size_t aSubdivs, Vec3f aColor, 
 	float prevY = std::cos( 0.f );
 	float prevZ = std::sin( 0.f );
 
+	
 	for( std::size_t i = 0; i < aSubdivs; ++i )
 	{
 		float const angle = (i+1) / float(aSubdivs) * 2.f * 3.1415926f;
@@ -54,6 +55,16 @@ SimpleMeshData make_cylinder( bool aCapped, std::size_t aSubdivs, Vec3f aColor, 
             pos.emplace_back(Vec3f{ 1.f, 0.f, 0.f });  // Center point
         }
     }
+
+	for( auto& p : pos )
+	{
+		Vec4f p4{ p.x, p.y, p.z, 1.f };
+		Vec4f t = aPreTransform * p4;
+		t /= t.w;
+
+		p = Vec3f{ t.x, t.y, t.z };
+	}
+
 
 	
 

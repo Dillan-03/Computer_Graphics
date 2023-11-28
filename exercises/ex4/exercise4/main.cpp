@@ -174,9 +174,35 @@ int main() try
 
 	//TODO: create VBOs and VAO
 	// vbos
-	auto testCylinder = make_cylinder( true, 16, {1.f, 0.f, 0.f} );
-	GLuint vao = create_vao( testCylinder );
-	std::size_t vertexCount = testCylinder.positions.size();
+	// auto testCylinder = make_cylinder( true, 16, {1.f, 0.f, 0.f} );
+	// GLuint vao = create_vao( testCylinder );
+	// std::size_t vertexCount = testCylinder.positions.size();
+
+	// auto testCone = make_cone( true, 16, {1.f, 0.f, 0.f} );
+	// GLuint vao = create_vao( testCone );
+	// std::size_t cone = testCone.positions.size();
+
+	auto xcyl = make_cylinder( true, 16, {1.f, 0.f, 0.f},
+		make_scaling( 5.f, 0.1f, 0.1f )
+	);
+	// GLuint cyclinderVao = create_vao( xcyl );
+
+	// std::size_t cyclindervertexCount = xcyl.positions.size();
+
+	auto xcone = make_cone( true, 16, {0.f, 0.f, 0.f},
+		make_scaling( 1.f, 0.3f, 0.3f ) * make_translation( { 5.f, 0.f, 0.f } )
+	);
+
+	// GLuint coneVao = create_vao( xcone );
+
+	// std::size_t coneVertexCounts = xcyl.positions.size();
+	
+
+	auto xarrow = concatenate( std::move(xcyl), xcone );
+	GLuint vao = create_vao( xarrow );
+	std::size_t VertexCounts = xarrow.positions.size();
+
+
 
 	
 	// Main loop
@@ -260,6 +286,7 @@ int main() try
 		glUseProgram(prog.programId());
 
 		OGL_CHECKPOINT_DEBUG();
+
 		glBindVertexArray(vao);
 
 		
@@ -267,10 +294,11 @@ int main() try
 			0,
 			1, GL_TRUE, projCameraWorld.v);
 
-		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
 		//Draw a single triangle starting at index 0
-		glDrawArrays( GL_TRIANGLES, 0, vertexCount);
+		// glDrawArrays( GL_TRIANGLES, 0, vertexCount);
+		glDrawArrays( GL_TRIANGLES, 0, VertexCounts);
 
 		//Reset state
 		glBindVertexArray(0);
