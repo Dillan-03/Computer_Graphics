@@ -1,8 +1,7 @@
 #ignore dependencices
 
 bin/
-._build_/
 lib/
 .vs/
 .vscode/
-third_party/
+
