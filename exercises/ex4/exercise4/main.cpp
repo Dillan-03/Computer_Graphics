@@ -205,7 +205,7 @@ int main() try
 	auto allArrows = concatenate(concatenate(std::move(xarrow), yarrow), zarrow);
 
 	GLuint vao = create_vao(allArrows); 
-	std::size_t vertexCount = allArrows.positions.size();
+	std::size_t vertexCounts = allArrows.positions.size();
 
 
 	
@@ -302,7 +302,7 @@ int main() try
 
 		//Draw a single triangle starting at index 0
 		// glDrawArrays( GL_TRIANGLES, 0, vertexCount);
-		glDrawArrays( GL_TRIANGLES, 0, VertexCounts);
+		glDrawArrays( GL_TRIANGLES, 0, vertexCounts);
 
 		//Reset state
 		glBindVertexArray(0);

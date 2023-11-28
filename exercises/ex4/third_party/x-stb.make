@@ -27,12 +27,14 @@ endif
 ifeq ($(origin AR), default)
   AR = ar
 endif
-INCLUDES += -I../third_party/stb/include -I../third_party/glad/include -I../third_party/glfw/include -I../third_party/rapidobj/include
+INCLUDES += -Istb/include -Iglad/include -Iglfw/include -Irapidobj/include
 FORCE_INCLUDE +=
 ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
+LIBS += -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+LDDEPS +=
 ALL_LDFLAGS += $(LDFLAGS) -m64 -pthread
-LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
+LINKCMD = $(AR) -rcs "$@" $(OBJECTS)
 define PREBUILDCMDS
 endef
 define PRELINKCMDS
@@ -41,24 +43,20 @@ define POSTBUILDCMDS
 endef
 
 ifeq ($(config),debug_x64)
-TARGETDIR = ../bin
-TARGET = $(TARGETDIR)/exercise4-debug-x64-clang.exe
-OBJDIR = ../_build_/debug-x64-clang/x64/debug/exercise4
+TARGETDIR = ../lib
+TARGET = $(TARGETDIR)/libx-stb-debug-x64-clang.a
+OBJDIR = ../_build_/debug-x64-clang/x64/debug/x-stb
 DEFINES += -D_DEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c++17 -march=native -Wall -pthread -Werror=vla
-LIBS += ../lib/libvmlib-debug-x64-clang.a ../lib/libsupport-debug-x64-clang.a ../lib/libx-stb-debug-x64-clang.a ../lib/libx-glad-debug-x64-clang.a ../lib/libx-glfw-debug-x64-clang.a -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-LDDEPS += ../lib/libvmlib-debug-x64-clang.a ../lib/libsupport-debug-x64-clang.a ../lib/libx-stb-debug-x64-clang.a ../lib/libx-glad-debug-x64-clang.a ../lib/libx-glfw-debug-x64-clang.a
 
 else ifeq ($(config),release_x64)
-TARGETDIR = ../bin
-TARGET = $(TARGETDIR)/exercise4-release-x64-clang.exe
-OBJDIR = ../_build_/release-x64-clang/x64/release/exercise4
+TARGETDIR = ../lib
+TARGET = $(TARGETDIR)/libx-stb-release-x64-clang.a
+OBJDIR = ../_build_/release-x64-clang/x64/release/x-stb
 DEFINES += -DNDEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c++17 -march=native -Wall -pthread -Werror=vla
-LIBS += ../lib/libvmlib-release-x64-clang.a ../lib/libsupport-release-x64-clang.a ../lib/libx-stb-release-x64-clang.a ../lib/libx-glad-release-x64-clang.a ../lib/libx-glfw-release-x64-clang.a -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-LDDEPS += ../lib/libvmlib-release-x64-clang.a ../lib/libsupport-release-x64-clang.a ../lib/libx-stb-release-x64-clang.a ../lib/libx-glad-release-x64-clang.a ../lib/libx-glfw-release-x64-clang.a
 
 endif
 
@@ -72,16 +70,10 @@ endif
 GENERATED :=
 OBJECTS :=
 
-GENERATED += $(OBJDIR)/cone.o
-GENERATED += $(OBJDIR)/cylinder.o
-GENERATED += $(OBJDIR)/loadobj.o
-GENERATED += $(OBJDIR)/main.o
-GENERATED += $(OBJDIR)/simple_mesh.o
-OBJECTS += $(OBJDIR)/cone.o
-OBJECTS += $(OBJDIR)/cylinder.o
-OBJECTS += $(OBJDIR)/loadobj.o
-OBJECTS += $(OBJDIR)/main.o
-OBJECTS += $(OBJDIR)/simple_mesh.o
+GENERATED += $(OBJDIR)/stb_image.o
+GENERATED += $(OBJDIR)/stb_image_write.o
+OBJECTS += $(OBJDIR)/stb_image.o
+OBJECTS += $(OBJDIR)/stb_image_write.o
 
 # Rules
 # #############################################
@@ -91,7 +83,7 @@ all: $(TARGET)
 
 $(TARGET): $(GENERATED) $(OBJECTS) $(LDDEPS) | $(TARGETDIR)
 	$(PRELINKCMDS)
-	@echo Linking exercise4
+	@echo Linking x-stb
 	$(SILENT) $(LINKCMD)
 	$(POSTBUILDCMDS)
 
@@ -112,7 +104,7 @@ else
 endif
 
 clean:
-	@echo Cleaning exercise4
+	@echo Cleaning x-stb
 ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -f  $(TARGET)
 	$(SILENT) rm -rf $(GENERATED)
@@ -145,21 +137,12 @@ endif
 # File Rules
 # #############################################
 
-$(OBJDIR)/cone.o: cone.cpp
+$(OBJDIR)/stb_image.o: stb/src/stb_image.c
 	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/cylinder.o: cylinder.cpp
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/stb_image_write.o: stb/src/stb_image_write.c
 	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/loadobj.o: loadobj.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/main.o: main.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
-$(OBJDIR)/simple_mesh.o: simple_mesh.cpp
-	@echo "$(notdir $<)"
-	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
 ifneq (,$(PCH))
