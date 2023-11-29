@@ -29,26 +29,22 @@ struct Mat22f
 constexpr
 Mat22f operator*( Mat22f const& aLeft, Mat22f const& aRight ) noexcept
 {
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-
-	//TODO: remove the following when you start your implementation
-	(void)aLeft; // Avoid warnings about unused arguments until the function
-	(void)aRight;  // is properly implemented.
-	return Mat22f{ 1.f, 0.f, 0.f, 1.f };
+	//Calculating the 2x2 matrix multiplication
+	return Mat22f{
+			aLeft._00 * aRight._00 + (aLeft._01 * aRight._10), 
+			aLeft._00 * aRight._01 + (aLeft._01 * aRight._11),
+			aLeft._10 * aRight._00 + (aLeft._11 * aRight._10) , 
+			aLeft._10 * aRight._01 + (aLeft._11 * aRight._11)};
 }
+
 
 constexpr
 Vec2f operator*( Mat22f const& aLeft, Vec2f const& aRight ) noexcept
 {
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-
-	//TODO: remove the following when you start your implementation
-	(void)aLeft; // Avoid warnings about unused arguments until the function
-	return aRight;
+	
+	//Using a 2x2 Matrix mulplication by a vector size 2. 
+	//Calling the dot function to compute the values
+	return Vec2f{dot(Vec2f{aLeft._00, aLeft._10}, aRight), dot(Vec2f{aLeft._01, aLeft._11}, aRight)};
 }
 
 // Functions:
@@ -56,14 +52,10 @@ Vec2f operator*( Mat22f const& aLeft, Vec2f const& aRight ) noexcept
 inline
 Mat22f make_rotation_2d( float aAngle ) noexcept
 {
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-	//TODO: your implementation goes here
-
-	//TODO: remove the following when you start your implementation
-	(void)aAngle; // Avoid warnings about unused arguments until the function
-	              // is properly implemented.
-	return Mat22f{ 1.f, 0.f, 0.f, 1.f };
+	
+	//Using Rotation Matrix to caulcate the computated matrix given the angle
+	return Mat22f{std::cos(aAngle), std::sin(aAngle), 
+				-std::sin(aAngle), std::cos(aAngle)};
 }
 
 #endif // MAT22_HPP_1F974C02_D0D1_4FBD_B5EE_A69C88112088

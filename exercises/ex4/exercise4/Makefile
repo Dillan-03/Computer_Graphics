@@ -18,20 +18,11 @@ endif
 # Configurations
 # #############################################
 
-ifeq ($(origin CC), default)
-  CC = clang
-endif
-ifeq ($(origin CXX), default)
-  CXX = clang++
-endif
-ifeq ($(origin AR), default)
-  AR = ar
-endif
+RESCOMP = windres
 INCLUDES += -I../third_party/stb/include -I../third_party/glad/include -I../third_party/glfw/include -I../third_party/rapidobj/include
 FORCE_INCLUDE +=
-ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
+ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-ALL_LDFLAGS += $(LDFLAGS) -m64 -pthread
 LINKCMD = $(CXX) -o "$@" $(OBJECTS) $(RESOURCES) $(ALL_LDFLAGS) $(LIBS)
 define PREBUILDCMDS
 endef
@@ -42,23 +33,25 @@ endef
 
 ifeq ($(config),debug_x64)
 TARGETDIR = ../bin
-TARGET = $(TARGETDIR)/exercise4-debug-x64-clang.exe
-OBJDIR = ../_build_/debug-x64-clang/x64/debug/exercise4
+TARGET = $(TARGETDIR)/exercise4-debug-x64-gcc.exe
+OBJDIR = ../_build_/debug-x64-gcc/x64/debug/exercise4
 DEFINES += -D_DEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c++17 -march=native -Wall -pthread -Werror=vla
-LIBS += ../lib/libvmlib-debug-x64-clang.a ../lib/libsupport-debug-x64-clang.a ../lib/libx-stb-debug-x64-clang.a ../lib/libx-glad-debug-x64-clang.a ../lib/libx-glfw-debug-x64-clang.a -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-LDDEPS += ../lib/libvmlib-debug-x64-clang.a ../lib/libsupport-debug-x64-clang.a ../lib/libx-stb-debug-x64-clang.a ../lib/libx-glad-debug-x64-clang.a ../lib/libx-glfw-debug-x64-clang.a
+LIBS += ../lib/libvmlib-debug-x64-gcc.a ../lib/libsupport-debug-x64-gcc.a ../lib/libx-stb-debug-x64-gcc.a ../lib/libx-glad-debug-x64-gcc.a ../lib/libx-glfw-debug-x64-gcc.a -ldl
+LDDEPS += ../lib/libvmlib-debug-x64-gcc.a ../lib/libsupport-debug-x64-gcc.a ../lib/libx-stb-debug-x64-gcc.a ../lib/libx-glad-debug-x64-gcc.a ../lib/libx-glfw-debug-x64-gcc.a
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -pthread
 
 else ifeq ($(config),release_x64)
 TARGETDIR = ../bin
-TARGET = $(TARGETDIR)/exercise4-release-x64-clang.exe
-OBJDIR = ../_build_/release-x64-clang/x64/release/exercise4
+TARGET = $(TARGETDIR)/exercise4-release-x64-gcc.exe
+OBJDIR = ../_build_/release-x64-gcc/x64/release/exercise4
 DEFINES += -DNDEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c++17 -march=native -Wall -pthread -Werror=vla
-LIBS += ../lib/libvmlib-release-x64-clang.a ../lib/libsupport-release-x64-clang.a ../lib/libx-stb-release-x64-clang.a ../lib/libx-glad-release-x64-clang.a ../lib/libx-glfw-release-x64-clang.a -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
-LDDEPS += ../lib/libvmlib-release-x64-clang.a ../lib/libsupport-release-x64-clang.a ../lib/libx-stb-release-x64-clang.a ../lib/libx-glad-release-x64-clang.a ../lib/libx-glfw-release-x64-clang.a
+LIBS += ../lib/libvmlib-release-x64-gcc.a ../lib/libsupport-release-x64-gcc.a ../lib/libx-stb-release-x64-gcc.a ../lib/libx-glad-release-x64-gcc.a ../lib/libx-glfw-release-x64-gcc.a -ldl
+LDDEPS += ../lib/libvmlib-release-x64-gcc.a ../lib/libsupport-release-x64-gcc.a ../lib/libx-stb-release-x64-gcc.a ../lib/libx-glad-release-x64-gcc.a ../lib/libx-glfw-release-x64-gcc.a
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -s -pthread
 
 endif
 
@@ -119,7 +112,7 @@ ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -rf $(OBJDIR)
 else
 	$(SILENT) if exist $(subst /,\\,$(TARGET)) del $(subst /,\\,$(TARGET))
-	$(SILENT) if exist $(subst /,\\,$(GENERATED)) del /s /q $(subst /,\\,$(GENERATED))
+	$(SILENT) if exist $(subst /,\\,$(GENERATED)) rmdir /s /q $(subst /,\\,$(GENERATED))
 	$(SILENT) if exist $(subst /,\\,$(OBJDIR)) rmdir /s /q $(subst /,\\,$(OBJDIR))
 endif
 
@@ -146,19 +139,19 @@ endif
 # #############################################
 
 $(OBJDIR)/cone.o: cone.cpp
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/cylinder.o: cylinder.cpp
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/loadobj.o: loadobj.cpp
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/main.o: main.cpp
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/simple_mesh.o: simple_mesh.cpp
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)

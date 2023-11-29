@@ -191,14 +191,14 @@ int main() try
 	auto ycyl = make_cylinder(true, 16, {0.f, 1.f, 0.f}, 
 					make_scaling(0.1f, 5.f, 0.1f)*make_rotation_z(3.1415926f / 2));
 	auto ycone = make_cone( true, 16, {0.f, 0.f, 0.f}, 
-    				make_scaling(0.3f, 1.f, 0.3f) * make_translation({0.f, 5.f, 0.f})*make_rotation_z(3.1415926f / 2) );
+    				make_scaling(0.3f, 1.f, 0.3f) * make_translation({0.f, 5.f, 0.f})*make_rotation_z(kPi_ / 2) );
 	auto yarrow = concatenate(std::move(ycyl), ycone);
 
 	auto zcyl = make_cylinder(true, 16, {0.f, 0.f, 1.f}, 
     				make_scaling(0.1f, 0.1f, 5.f)*make_rotation_y(3.1415926f / 2));
 	// Cone for the tip of the arrow, positioned at the end of the cylinder
 	auto zcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
-    				make_scaling(0.3f, 0.3f, 1.f) * make_translation({0.f, 0.f, 5.f})*make_rotation_y(3.1415926f / 2));
+    				make_scaling(0.3f, 0.3f, 1.f) * make_translation({0.f, 0.f, -5.f})*make_rotation_y(kPi_ / 2));
 	auto zarrow = concatenate(std::move(zcyl), zcone);
 
 

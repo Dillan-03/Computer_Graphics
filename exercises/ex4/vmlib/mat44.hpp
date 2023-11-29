@@ -195,6 +195,13 @@ Mat44f make_translation( Vec3f aTranslation ) noexcept
 inline
 Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aNear, float aFar ) noexcept
 {
+
+    //TODO: your implementation goes here
+	// sx = s/aspect
+	// sy = 1/tan(fov/2)
+	// a = -(far+near)/(far-near)
+	// b = -2 (far*near)/(far-near)
+    
 	Mat44f result = kIdentity44f;
     const float tanHalfFOV = std::tan(aFovInRadians / 2.0f);
 

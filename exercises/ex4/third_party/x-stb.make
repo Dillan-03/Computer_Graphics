@@ -18,22 +18,13 @@ endif
 # Configurations
 # #############################################
 
-ifeq ($(origin CC), default)
-  CC = clang
-endif
-ifeq ($(origin CXX), default)
-  CXX = clang++
-endif
-ifeq ($(origin AR), default)
-  AR = ar
-endif
+RESCOMP = windres
 INCLUDES += -Istb/include -Iglad/include -Iglfw/include -Irapidobj/include
 FORCE_INCLUDE +=
-ALL_CPPFLAGS += $(CPPFLAGS) -MD -MP $(DEFINES) $(INCLUDES)
+ALL_CPPFLAGS += $(CPPFLAGS) -MMD -MP $(DEFINES) $(INCLUDES)
 ALL_RESFLAGS += $(RESFLAGS) $(DEFINES) $(INCLUDES)
-LIBS += -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo
+LIBS += -ldl
 LDDEPS +=
-ALL_LDFLAGS += $(LDFLAGS) -m64 -pthread
 LINKCMD = $(AR) -rcs "$@" $(OBJECTS)
 define PREBUILDCMDS
 endef
@@ -44,19 +35,21 @@ endef
 
 ifeq ($(config),debug_x64)
 TARGETDIR = ../lib
-TARGET = $(TARGETDIR)/libx-stb-debug-x64-clang.a
-OBJDIR = ../_build_/debug-x64-clang/x64/debug/x-stb
+TARGET = $(TARGETDIR)/libx-stb-debug-x64-gcc.a
+OBJDIR = ../_build_/debug-x64-gcc/x64/debug/x-stb
 DEFINES += -D_DEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -g -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -g -std=c++17 -march=native -Wall -pthread -Werror=vla
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -pthread
 
 else ifeq ($(config),release_x64)
 TARGETDIR = ../lib
-TARGET = $(TARGETDIR)/libx-stb-release-x64-clang.a
-OBJDIR = ../_build_/release-x64-clang/x64/release/x-stb
+TARGET = $(TARGETDIR)/libx-stb-release-x64-gcc.a
+OBJDIR = ../_build_/release-x64-gcc/x64/release/x-stb
 DEFINES += -DNDEBUG=1
 ALL_CFLAGS += $(CFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -march=native -Wall -pthread -Werror=vla
 ALL_CXXFLAGS += $(CXXFLAGS) $(ALL_CPPFLAGS) -m64 -O2 -std=c++17 -march=native -Wall -pthread -Werror=vla
+ALL_LDFLAGS += $(LDFLAGS) -L/usr/lib64 -m64 -s -pthread
 
 endif
 
@@ -111,7 +104,7 @@ ifeq (posix,$(SHELLTYPE))
 	$(SILENT) rm -rf $(OBJDIR)
 else
 	$(SILENT) if exist $(subst /,\\,$(TARGET)) del $(subst /,\\,$(TARGET))
-	$(SILENT) if exist $(subst /,\\,$(GENERATED)) del /s /q $(subst /,\\,$(GENERATED))
+	$(SILENT) if exist $(subst /,\\,$(GENERATED)) rmdir /s /q $(subst /,\\,$(GENERATED))
 	$(SILENT) if exist $(subst /,\\,$(OBJDIR)) rmdir /s /q $(subst /,\\,$(OBJDIR))
 endif
 
@@ -138,10 +131,10 @@ endif
 # #############################################
 
 $(OBJDIR)/stb_image.o: stb/src/stb_image.c
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/stb_image_write.o: stb/src/stb_image_write.c
-	@echo "$(notdir $<)"
+	@echo $(notdir $<)
 	$(SILENT) $(CC) $(ALL_CFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
