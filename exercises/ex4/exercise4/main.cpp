@@ -204,9 +204,12 @@ int main() try
 
 	auto allArrows = concatenate(concatenate(std::move(xarrow), yarrow), zarrow);
 
-	GLuint vao = create_vao(allArrows); 
-	std::size_t vertexCounts = allArrows.positions.size();
+	// GLuint vao = create_vao(allArrows); 
+	// std::size_t vertexCounts = allArrows.positions.size();
 
+	SimpleMeshData armadilla = load_wavefront_obj("./assets/Armadillo.obj");
+	GLuint vao = create_vao( armadilla );
+	std::size_t armadilloVertexCount = armadilla.positions.size();
 
 	
 	// Main loop
@@ -302,7 +305,7 @@ int main() try
 
 		//Draw a single triangle starting at index 0
 		// glDrawArrays( GL_TRIANGLES, 0, vertexCount);
-		glDrawArrays( GL_TRIANGLES, 0, vertexCounts);
+		glDrawArrays( GL_TRIANGLES, 0, armadilloVertexCount);
 
 		//Reset state
 		glBindVertexArray(0);
