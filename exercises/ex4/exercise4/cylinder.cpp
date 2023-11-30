@@ -8,6 +8,8 @@ SimpleMeshData make_cylinder( bool aCapped, std::size_t aSubdivs, Vec3f aColor, 
 
 	float prevY = std::cos( 0.f );
 	float prevZ = std::sin( 0.f );
+	std::vector<Vec3f> normals; // Added for storing normals
+
 
 	
 	for( std::size_t i = 0; i < aSubdivs; ++i )
