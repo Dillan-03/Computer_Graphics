@@ -1,0 +1,8 @@
+The Armadillo model originates from the Stanford 3D Scanning Repository:
+  http://graphics.stanford.edu/data/3Dscanrep
+The reconstructed model contains 345944 triangles. The original model from the
+above page is in the PLY format. It has been converted to a binary format (see
+readme.md for additional information on the format). During conversion, the
+mesh was re-indexed and its normals recomputed. The indexing produced 172974
+unique vertices and 1037832 indices. It has been rescaled w.r.t. the original
+PLY file.
