@@ -65,8 +65,12 @@ endif
 GENERATED :=
 OBJECTS :=
 
+GENERATED += $(OBJDIR)/loadcustom.o
 GENERATED += $(OBJDIR)/main.o
+GENERATED += $(OBJDIR)/simple_mesh.o
+OBJECTS += $(OBJDIR)/loadcustom.o
 OBJECTS += $(OBJDIR)/main.o
+OBJECTS += $(OBJDIR)/simple_mesh.o
 
 # Rules
 # #############################################
@@ -130,7 +134,13 @@ endif
 # File Rules
 # #############################################
 
+$(OBJDIR)/loadcustom.o: loadcustom.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/main.o: main.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/simple_mesh.o: simple_mesh.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 

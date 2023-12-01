@@ -1,6 +1,7 @@
 #include <glad.h>
 #include <GLFW/glfw3.h>
 
+
 #include <typeinfo>
 #include <stdexcept>
 
@@ -14,17 +15,42 @@
 
 #include "../vmlib/vec4.hpp"
 #include "../vmlib/mat44.hpp"
+#include "../vmlib/mat33.hpp"
 
 #include "defaults.hpp"
+#include "loadcustom.hpp"
 
 
 namespace
 {
 	constexpr char const* kWindowTitle = "COMP3811 - CW2";
+
+	constexpr float kPi_ = 3.1415926f;
+
+	constexpr float kMovementPerSecond_ = 5.f; // units per second
+	constexpr float kMouseSensitivity_ = 0.01f; // radians per pixel
+
+	struct State_
+	{
+		ShaderProgram* prog;
+
+		struct CamCtrl_
+		{
+			bool cameraActive;
+			bool actionZoomIn, actionZoomOut;
+			
+			float phi, theta;
+			float radius;
+
+			float lastX, lastY;
+		} camControl;
+	};
+
 	
 	void glfw_callback_error_( int, char const* );
 
 	void glfw_callback_key_( GLFWwindow*, int, int, int, int );
+	void glfw_callback_motion_( GLFWwindow*, double, double );
 
 	struct GLFWCleanupHelper
 	{
@@ -37,6 +63,7 @@ namespace
 	};
 }
 
+
 int main() try
 {
 	// Initialize GLFW
@@ -47,6 +74,7 @@ int main() try
 		throw Error( "glfwInit() failed with '%s' (%d)", msg, ecode );
 	}
 
+	
 	// Ensure that we call glfwTerminate() at the end of the program.
 	GLFWCleanupHelper cleanupHelper;
 
@@ -90,8 +118,12 @@ int main() try
 
 	// Set up event handling
 	// TODO: Additional event handling setup
+	State_ state{};
+
+	glfwSetWindowUserPointer( window, &state );
 
 	glfwSetKeyCallback( window, &glfw_callback_key_ );
+	glfwSetCursorPosCallback( window, &glfw_callback_motion_ );
 
 	// Set up drawing stuff
 	glfwMakeContextCurrent( window );
@@ -115,6 +147,9 @@ int main() try
 	// Global GL state
 	OGL_CHECKPOINT_ALWAYS();
 
+	glEnable(GL_FRAMEBUFFER_SRGB);
+	// glEnable(GL_CULL_FACE);
+	glEnable( GL_DEPTH_TEST );
 	// TODO: global GL setup goes here
 
 	OGL_CHECKPOINT_ALWAYS();
@@ -127,6 +162,22 @@ int main() try
 	glfwGetFramebufferSize( window, &iwidth, &iheight );
 
 	glViewport( 0, 0, iwidth, iheight );
+	// Load shader program
+	ShaderProgram prog( {
+		{ GL_VERTEX_SHADER, "assets/default.vert" },
+		{ GL_FRAGMENT_SHADER, "assets/default.frag" }
+	} );
+
+	state.prog = &prog;
+	state.camControl.radius = 10.f;
+
+	// Animation state
+	auto last = Clock::now();
+	float angle = 0.f;
+
+	SimpleMeshData map = load_wavefront_obj("./assets/parlahti.obj");
+	GLuint vao = create_vao( map );
+	std::size_t VertexCount = map.positions.size();
 
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
@@ -167,11 +218,93 @@ int main() try
 		// Update state
 		//TODO: update state
 
+		auto const now = Clock::now();
+		float dt = std::chrono::duration_cast<Secondsf>(now-last).count();
+		last = now;
+
+
+		angle += dt * kPi_ * 0.3f;
+		if( angle >= 2.f*kPi_ )
+			angle -= 2.f*kPi_;
+
+		// Update camera state
+		if( state.camControl.actionZoomIn )
+			state.camControl.radius -= kMovementPerSecond_ * dt;
+		else if( state.camControl.actionZoomOut )
+			state.camControl.radius += kMovementPerSecond_ * dt;
+
+		if( state.camControl.radius <= 0.1f )
+			state.camControl.radius = 0.1f;
+
+		// Update: compute matrices
+		//TODO: define and compute projCameraWorld matrix
+
+
+		
+		// Mat44f Rx = make_rotation_x( state.camControl.theta );
+		// Mat44f Ry = make_rotation_y( state.camControl.phi );
+		// Mat44f model2world = Ry* Rx;//make_rotation_y(angle);
+		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
+
+		
+		// Mat44f world2camera = make_translation( { 0.f, 0.f, -state.camControl.radius } );
+		
+		// Mat44f projection = make_perspective_projection(
+		// 	60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
+		// 	fbwidth/float(fbheight),
+		// 	0.1f, 100.0f);
+		// Mat44f projCameraWorld = projection * world2camera * model2world;
+
+		Mat44f staticTerrain = make_rotation_y(0);
+
+		Mat44f Rx = make_rotation_x( state.camControl.theta );
+		Mat44f Ry = make_rotation_y( state.camControl.phi );
+		Mat44f T = make_translation( { 0.f, 0.f, -state.camControl.radius } );
+		Mat44f world2camera = Ry * Rx * T;
+
+		// Mat44f world2camera = make_translation( { 0.f, 0.f, -10.f } );
+		Mat44f projection = make_perspective_projection(
+			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
+			fbwidth/float(fbheight),
+			0.1f, 100.0f);
+		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
+
 		// Draw scene
+		
 		OGL_CHECKPOINT_DEBUG();
 
 		//TODO: draw frame
+		// Clear color buffer to specified clear color (glClearColor())
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+		//We want to draw with our program
+		glUseProgram(prog.programId());
+
+		OGL_CHECKPOINT_DEBUG();
+
+		//Source input as defined in our VAO
+		glBindVertexArray(vao);
+
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorld.v);
+
+		GLuint loc = glGetUniformLocation(prog.programId(), "uNormalMatrix");
+
+		glUniformMatrix3fv(
+			loc, // make sure this matches the location = N in the vertex shader!
+			1, GL_TRUE, normalMatrix.v
+		);
+
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+
+
+		//Draw a single triangle starting at index 0
+		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
+
+		//Reset state
+		glBindVertexArray(0);
+		glUseProgram(0);
 		OGL_CHECKPOINT_DEBUG();
 
 		// Display results
@@ -179,6 +312,7 @@ int main() try
 	}
 
 	// Cleanup.
+	state.prog = nullptr;
 	//TODO: additional cleanup
 	
 	return 0;
@@ -205,6 +339,81 @@ namespace
 		{
 			glfwSetWindowShouldClose( aWindow, GLFW_TRUE );
 			return;
+		}
+
+		if( auto* state = static_cast<State_*>(glfwGetWindowUserPointer( aWindow )) )
+		{
+			// R-key reloads shaders.
+			if( GLFW_KEY_R == aKey && GLFW_PRESS == aAction )
+			{
+				if( state->prog )
+				{
+					try
+					{
+						state->prog->reload();
+						std::fprintf( stderr, "Shaders reloaded and recompiled.\n" );
+					}
+					catch( std::exception const& eErr )
+					{
+						std::fprintf( stderr, "Error when reloading shader:\n" );
+						std::fprintf( stderr, "%s\n", eErr.what() );
+						std::fprintf( stderr, "Keeping old shader.\n" );
+					}
+				}
+			}
+
+			// Space toggles camera
+			if( GLFW_KEY_SPACE == aKey && GLFW_PRESS == aAction )
+			{
+				state->camControl.cameraActive = !state->camControl.cameraActive;
+
+				if( state->camControl.cameraActive )
+					glfwSetInputMode( aWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN );
+				else
+					glfwSetInputMode( aWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
+			}
+
+			// Camera controls if camera is active
+			if( state->camControl.cameraActive )
+			{
+				if( GLFW_KEY_W == aKey )
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionZoomIn = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionZoomIn = false;
+				}
+				else if( GLFW_KEY_S == aKey )
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionZoomOut = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionZoomOut = false;
+				}
+			}
+		}
+	}
+
+	void glfw_callback_motion_( GLFWwindow* aWindow, double aX, double aY )
+	{
+		if( auto* state = static_cast<State_*>(glfwGetWindowUserPointer( aWindow )) )
+		{
+			if( state->camControl.cameraActive )
+			{
+				auto const dx = float(aX-state->camControl.lastX);
+				auto const dy = float(aY-state->camControl.lastY);
+
+				state->camControl.phi += dx*kMouseSensitivity_;
+				
+				state->camControl.theta += dy*kMouseSensitivity_;
+				if( state->camControl.theta > kPi_/2.f )
+					state->camControl.theta = kPi_/2.f;
+				else if( state->camControl.theta < -kPi_/2.f )
+					state->camControl.theta = -kPi_/2.f;
+			}
+
+			state->camControl.lastX = float(aX);
+			state->camControl.lastY = float(aY);
 		}
 	}
 
