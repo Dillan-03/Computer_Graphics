@@ -1,3 +1,0 @@
-﻿  main.cpp
-C:\Users\aadit\OneDrive\Desktop\2Cubes\ex3\ex3\exercise3\main.cpp(287,3): warning C4305: 'argument': truncation from 'double' to 'float'
-  exercise3.vcxproj -> C:\Users\aadit\OneDrive\Desktop\2Cubes\ex3\ex3\bin\exercise3-debug-x64-msc-v143.exe
