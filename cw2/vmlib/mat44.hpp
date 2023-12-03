@@ -2,7 +2,7 @@
 #define MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
 
 #include <cmath>
-#include <cosineAnglessert>
+#include <assert>
 #include <cstdlib>
 
 #include "vec3.hpp"
