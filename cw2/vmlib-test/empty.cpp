@@ -608,8 +608,6 @@ TEST_CASE( "make_translation(Vec3f)", "[translation][mat44]" ){
 // To check that the perspective projection matrix is correct
 TEST_CASE("Perspective Projection", "[perspective][mat44]"){
 
-	float s,sx,sy,a,b;
-
 	constexpr float kPi_ = 3.1415926f;
 
  	static constexpr float kEps_ = 1e-6f;
@@ -627,10 +625,10 @@ TEST_CASE("Perspective Projection", "[perspective][mat44]"){
 
 		const float s = 1.0f/std::tan(FOV / 2.0f);
 
-		sx = s/aAspect;
-		sy = s;
-		a = -((aFar + aNear) / (aFar - aNear));
-   		b = -2.0f * ((aFar * aNear) / (aFar - aNear));
+		float sx = s/aAspect;
+		float sy = s;
+		float a = -((aFar + aNear) / (aFar - aNear));
+   		float b = -2.0f * ((aFar * aNear) / (aFar - aNear));
     
         //Check each value in the matrix to see if it has been correctly translated
 		REQUIRE_THAT(perspective(0,0), WithinAbs(sx, kEps_));
@@ -666,10 +664,10 @@ TEST_CASE("Perspective Projection", "[perspective][mat44]"){
 
 		const float s = 1.0f/std::tan(FOV / 2.0f);
 
-		sx = s/aAspect;
-		sy = s;
-		a = -((aFar + aNear) / (aFar - aNear));
-   		b = -2.0f * ((aFar * aNear) / (aFar - aNear));
+		float sx = s/aAspect;
+		float sy = s;
+		float a = -((aFar + aNear) / (aFar - aNear));
+   		float b = -2.0f * ((aFar * aNear) / (aFar - aNear));
     
         //Check each value in the matrix to see if it has been correctly translated
 		REQUIRE_THAT(perspective(0,0), WithinAbs(sx, kEps_));

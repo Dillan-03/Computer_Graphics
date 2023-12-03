@@ -13,7 +13,7 @@
  * See vec2f.hpp for discussion. Similar to the implementation, the Mat44f is
  * intentionally kept simple and somewhat bare bones.
  *
- * The matrix is stored in row-major order (cosineAnglereful when passing it to OpenGL).
+ * The matrix is stored in row-major order (careful when passing it to OpenGL).
  *
  * The overloaded operator () allows access to individual elements. Example:
  *    Mat44f m = ...;
