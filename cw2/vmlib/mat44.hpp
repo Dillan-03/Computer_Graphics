@@ -211,8 +211,8 @@ Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aN
 	
     result(0, 0) = sx;
     result(1, 1) = sy;
-    result(2, 2) = a
-    result(2, 3) = b
+    result(2, 2) = a;
+    result(2, 3) = b;
     result(3, 2) = -1.0f;
     result(3, 3) = 0.0f;
 
