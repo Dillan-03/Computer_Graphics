@@ -1,8 +1,8 @@
-#ifndef MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
-#define MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
+#ifndef MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
+#define MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
 
 #include <cmath>
-#include <cassert>
+#include <cosineAnglessert>
 #include <cstdlib>
 
 #include "vec3.hpp"
@@ -13,7 +13,7 @@
  * See vec2f.hpp for discussion. Similar to the implementation, the Mat44f is
  * intentionally kept simple and somewhat bare bones.
  *
- * The matrix is stored in row-major order (careful when passing it to OpenGL).
+ * The matrix is stored in row-major order (cosineAnglereful when passing it to OpenGL).
  *
  * The overloaded operator () allows access to individual elements. Example:
  *    Mat44f m = ...;
@@ -59,9 +59,6 @@ constexpr Mat44f kIdentity44f = { {
 constexpr
 Mat44f operator*( Mat44f const& aLeft, Mat44f const& aRight ) noexcept
 {
-	//TODO: your implementation goes here
-	//TODO: remove the following when you start your implementation
-
 	// Matrix Multiplication 
 	Mat44f result = kIdentity44f;
 
@@ -84,7 +81,7 @@ Mat44f operator*( Mat44f const& aLeft, Mat44f const& aRight ) noexcept
 constexpr
 Vec4f operator*( Mat44f const& aLeft, Vec4f const& aRight ) noexcept
 {
-	//TODO: your implementation goes here
+	
 	//Matrix - Vector Multiplication
 	//Result will be column vector
 	Vec4f result = {};
@@ -121,14 +118,14 @@ Mat44f make_rotation_x( float aAngle ) noexcept
 {
 
     Mat44f result = kIdentity44f;
-    float ca = std::cos(aAngle);
-    float sa = std::sin(aAngle);
+    float cosineAngle = std::cos(aAngle);
+    float sineAngle = std::sin(aAngle);
 
 	//Using the Identiy Matrix and updating the required cells
-    result(1, 1) = ca;
-    result(1, 2) = -sa;
-    result(2, 1) = sa;
-    result(2, 2) = ca;
+    result(1, 1) = cosineAngle;
+    result(1, 2) = -sineAngle;
+    result(2, 1) = sineAngle;
+    result(2, 2) = cosineAngle;
 
     return result;
 	
@@ -140,14 +137,14 @@ Mat44f make_rotation_y( float aAngle ) noexcept
 {
 
 	Mat44f result = kIdentity44f;
-    float ca = std::cos(aAngle);
-    float sa = std::sin(aAngle);
+    float cosineAngle = std::cos(aAngle);
+    float sineAngle = std::sin(aAngle);
 
-	//Using the Identiy Matrix and updating the required cells
-    result(0, 0) = ca;
-    result(0, 2) = sa;
-    result(2, 0) = -sa;
-    result(2, 2) = ca;
+	//Using the Identity Matrix and updating the required cells
+    result(0, 0) = cosineAngle;
+    result(0, 2) = sineAngle;
+    result(2, 0) = -sineAngle;
+    result(2, 2) = cosineAngle;
 
     return result;
 
@@ -156,16 +153,15 @@ Mat44f make_rotation_y( float aAngle ) noexcept
 inline
 Mat44f make_rotation_z( float aAngle ) noexcept
 {
-	//TODO: your implementation goes here
 	Mat44f result = kIdentity44f;
-    float ca = std::cos(aAngle);
-    float sa = std::sin(aAngle);
+    float cosineAngle = std::cos(aAngle);
+    float sineAngle = std::sin(aAngle);
 
 	//Using the Identiy Matrix and updating the required cells
-    result(0, 0) = ca;
-    result(0, 1) = -sa;
-    result(1, 0) = sa;
-    result(1, 1) = ca;
+    result(0, 0) = cosineAngle;
+    result(0, 1) = -sineAngle;
+    result(1, 0) = sineAngle;
+    result(1, 1) = cosineAngle;
 
     return result;
 	
@@ -174,7 +170,6 @@ Mat44f make_rotation_z( float aAngle ) noexcept
 inline
 Mat44f make_translation( Vec3f aTranslation ) noexcept
 {
-	//TODO: your implementation goes here
 	Mat44f result = kIdentity44f;
 
 	//Updating the required cells
@@ -188,43 +183,43 @@ Mat44f make_translation( Vec3f aTranslation ) noexcept
 inline
 Mat44f make_scaling( float aSX, float aSY, float aSZ ) noexcept
 {
-	//TODO: your implementation goes here
-	//TODO: remove the following when you start your implementation
-	(void)aSX;  // Avoid warnings about unused arguments until the function
-	(void)aSY;  // is properly implemented.
-	(void)aSZ;
-	return kIdentity44f;
+	Mat44f result = kIdentity44f;
+
+    result(0, 0) = aSX;
+    result(1, 1) = aSY;
+    result(2, 2) = aSZ;
+
+    return result;
 }
 
 
 inline
 Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aNear, float aFar ) noexcept
 {
-	//TODO: your implementation goes here
 	// sx = s/aspect
 	// sy = 1/tan(fov/2)
 	// a = -(far+near)/(far-near)
 	// b = -2 (far*near)/(far-near)
 	
 	Mat44f result = kIdentity44f;
-    const float tanHalfFOV = std::tan(aFovInRadians / 2.0f);
+    const float s = 1.0f/std::tan(aFovInRadians / 2.0f);
 
-    result(0, 0) = 1.0f / (aAspect);
-    result(1, 1) = 1.0f / tanHalfFOV;
-    result(2, 2) = -(aFar + aNear) / (aFar - aNear);
-    result(2, 3) = -(2.0f * aFar * aNear) / (aFar - aNear);
+	sx = s/aAspect;
+	sy = s;
+	a = -((aFar+aNear)/(aFar-aNear));
+	b = -2.0f*((aFar*aNear)/(aFar-aNear));
+	
+    result(0, 0) = sx;
+    result(1, 1) = sy;
+    result(2, 2) = a
+    result(2, 3) = b
     result(3, 2) = -1.0f;
     result(3, 3) = 0.0f;
 
     return result;
-	//TODO: remove the following when you start your implementation
-	// (void)aFovInRadians; // Avoid warnings about unused arguments until the function
-	// (void)aAspect;       // is properly implemented.
-	// (void)aNear;
-	// (void)aFar;
 }
 
 
 
 
-#endif // MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
+#endif // MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
