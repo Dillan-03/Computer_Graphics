@@ -204,10 +204,10 @@ Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aN
 	Mat44f result = kIdentity44f;
     const float s = 1.0f/std::tan(aFovInRadians / 2.0f);
 
-	sx = s/aAspect;
-	sy = s;
-	a = -((aFar+aNear)/(aFar-aNear));
-	b = -2.0f*((aFar*aNear)/(aFar-aNear));
+	float sx = s/aAspect;
+	float sy = s;
+	float a = -((aFar+aNear)/(aFar-aNear));
+	float b = -2.0f*((aFar*aNear)/(aFar-aNear));
 	
     result(0, 0) = sx;
     result(1, 1) = sy;
