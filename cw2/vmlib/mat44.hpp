@@ -1,5 +1,5 @@
-#ifndef MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
-#define MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
+#ifndef MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
+#define MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
 
 #include <cmath>
 #include <assert>
@@ -222,4 +222,4 @@ Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aN
 
 
 
-#endif // MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4cosineAngle
+#endif // MAT44_HPP_E7187A26_469E_48AD_A3D2_63150F05A4CA
