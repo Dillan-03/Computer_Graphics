@@ -297,7 +297,7 @@ int main() try
 			loc, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
-		// Textures
+		// Textures to match to the map texture file 
 		glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureMap);
 
