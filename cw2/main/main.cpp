@@ -20,7 +20,6 @@
 #include "defaults.hpp"
 #include "loadcustom.hpp"
 
-
 namespace
 {
 	constexpr char const* kWindowTitle = "COMP3811 - CW2";
@@ -45,13 +44,12 @@ namespace
 			float lastX, lastY;
 		} camControl;
 	};
-
+	
 	
 	void glfw_callback_error_( int, char const* );
 
 	void glfw_callback_key_( GLFWwindow*, int, int, int, int );
 	void glfw_callback_motion_( GLFWwindow*, double, double );
-
 	struct GLFWCleanupHelper
 	{
 		~GLFWCleanupHelper();
@@ -148,6 +146,8 @@ int main() try
 	OGL_CHECKPOINT_ALWAYS();
 
 	glEnable(GL_FRAMEBUFFER_SRGB);
+
+	glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
 	// glEnable(GL_CULL_FACE);
 	glEnable( GL_DEPTH_TEST );
 	// TODO: global GL setup goes here
@@ -175,7 +175,7 @@ int main() try
 	auto last = Clock::now();
 	float angle = 0.f;
 
-	SimpleMeshData map = load_wavefront_obj("./assets/parlahti.obj");
+	SimpleMeshData map = load_wavefront_obj("assets/parlahti.obj");
 	GLuint vao = create_vao( map );
 	std::size_t VertexCount = map.positions.size();
 
@@ -295,6 +295,12 @@ int main() try
 			loc, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
+
+		//Lighting uniform values 
+		Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+		glUniform3fv( 2, 1, &lightDir.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 

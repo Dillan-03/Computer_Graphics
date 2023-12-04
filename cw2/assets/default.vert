@@ -19,4 +19,4 @@ void main()
 
      v2fNormal = normalize(uNormalMatrix * iNormal);
 
-   }
+}

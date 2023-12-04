@@ -43,6 +43,14 @@ SimpleMeshData load_wavefront_obj( char const* aPath )
 				mat.ambient[1],
 				mat.ambient[2]
 				} );
+
+			// extract normal vector data from obj file and add it to the mesh data structure:
+			ret.normals.emplace_back(Vec3f{
+           		result.attributes.normals[idx.normal_index * 3 + 0],
+            	result.attributes.normals[idx.normal_index * 3 + 1],
+            	result.attributes.normals[idx.normal_index * 3 + 2]
+                });
+
 		}
 	}
 	
