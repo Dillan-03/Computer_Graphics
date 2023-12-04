@@ -5,4 +5,7 @@
 
 SimpleMeshData load_wavefront_obj( char const* aPath );
 
+GLuint load_texture_world( char const* aPath );
+
+
 #endif // LOADOBJ_HPP_2CF735BE_6624_413E_B6DC_B5BBA337F96F

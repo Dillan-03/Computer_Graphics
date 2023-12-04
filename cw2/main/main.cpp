@@ -175,9 +175,20 @@ int main() try
 	auto last = Clock::now();
 	float angle = 0.f;
 
+	//Loading in Map
 	SimpleMeshData map = load_wavefront_obj("assets/parlahti.obj");
 	GLuint vao = create_vao( map );
 	std::size_t VertexCount = map.positions.size();
+
+	//Loading in the texture
+	GLuint textureMap = load_texture_world("assets/L4343A-4k.jpeg");
+	
+
+	//Loading in LandingPad
+	SimpleMeshData pad = load_wavefront_obj("assets/landingpad.obj");
+	GLuint vaoPad = create_vao( pad );
+	std::size_t padVertexCount = pad.positions.size();
+
 
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
@@ -191,6 +202,8 @@ int main() try
 	{
 		// Let GLFW process events
 		glfwPollEvents();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Only once at the beginning of the render loop
+
 		
 		// Check if window was resized.
 		float fbwidth, fbheight;
@@ -238,63 +251,75 @@ int main() try
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
-
-
-		
-		// Mat44f Rx = make_rotation_x( state.camControl.theta );
-		// Mat44f Ry = make_rotation_y( state.camControl.phi );
-		// Mat44f model2world = Ry* Rx;//make_rotation_y(angle);
+		// Create cameraworld on map
 		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
-
-		
-		// Mat44f world2camera = make_translation( { 0.f, 0.f, -state.camControl.radius } );
-		
-		// Mat44f projection = make_perspective_projection(
-		// 	60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
-		// 	fbwidth/float(fbheight),
-		// 	0.1f, 100.0f);
-		// Mat44f projCameraWorld = projection * world2camera * model2world;
-
 		Mat44f staticTerrain = make_rotation_y(0);
-
 		Mat44f Rx = make_rotation_x( state.camControl.theta );
 		Mat44f Ry = make_rotation_y( state.camControl.phi );
 		Mat44f T = make_translation( { 0.f, 0.f, -state.camControl.radius } );
 		Mat44f world2camera = Ry * Rx * T;
-
-		// Mat44f world2camera = make_translation( { 0.f, 0.f, -10.f } );
 		Mat44f projection = make_perspective_projection(
 			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
 			fbwidth/float(fbheight),
 			0.1f, 100.0f);
 		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
 
-		// Draw scene
+		// Create cameraworld on first pad
+		// Only need to update the model2world to move the pad around 
+		Mat44f model2worldPad = make_translation( {0.0f, -0.969504, 20.0f} );
+		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
+
+		//Create cameraWorld on second pad 
+		Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
+		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 		
+
+		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
 
-		//TODO: draw frame
 		// Clear color buffer to specified clear color (glClearColor())
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-		//We want to draw with our program
+		//We want to draw with our prpadVertexCountogram
 		glUseProgram(prog.programId());
 
 		OGL_CHECKPOINT_DEBUG();
 
 		//Source input as defined in our VAO
-		glBindVertexArray(vao);
-
+		//Drawing the map
+		// --------------
+		glBindVertexArray(vao);	
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorld.v);
-
 		GLuint loc = glGetUniformLocation(prog.programId(), "uNormalMatrix");
-
 		glUniformMatrix3fv(
 			loc, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
+		
+		glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureMap);
+
+		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
+
+
+		//Drawing the Pad
+		// -------------
+		glBindVertexArray(vaoPad);
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorldPad.v);
+
+		
+		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+		// Drawing the second Pad
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorldPadsecond.v);
+		//Draw a single triangle starting at index 0
+		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
 
 		//Lighting uniform values 
 		Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
@@ -302,11 +327,6 @@ int main() try
 		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
-		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-
-
-		//Draw a single triangle starting at index 0
-		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
 
 		//Reset state
 		glBindVertexArray(0);
@@ -320,6 +340,9 @@ int main() try
 	// Cleanup.
 	state.prog = nullptr;
 	//TODO: additional cleanup
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	
 	return 0;
 }

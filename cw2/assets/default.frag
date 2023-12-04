@@ -1,5 +1,8 @@
 #version 430
-in vec3 v2fColor; 
+in vec3 v2fColor;
+in vec2 v2fTexCoord;
+
+
 
 
 
@@ -11,15 +14,19 @@ layout( location = 2 ) uniform vec3 uLightDir; // should be normalized! kuLightD
 layout( location = 3 ) uniform vec3 uLightDiffuse; //Diffuse illumination
 layout( location = 4 ) uniform vec3 uSceneAmbient; //Global ambient scene
 
+layout ( binding = 0) uniform sampler2D uTexture;
+
 in vec3 v2fNormal;
 
 void main()
 {
+    //Calculate texture
+    vec3 textureColour = texture(uTexture, v2fTexCoord).rgb;
 
     vec3 normal = normalize(v2fNormal);
 
     float nDotL = max(0.0, dot(normal, uLightDir));
 
-    oColor = (uSceneAmbient + nDotL * uLightDiffuse) * v2fColor;
+    oColor = (uSceneAmbient + nDotL * uLightDiffuse) * textureColour;
 
 }
