@@ -1,7 +1,7 @@
 #version 430
 in vec3 v2fColor;
 in vec2 v2fTexCoord;
-
+in vec3 v2fNormal;
 
 
 
@@ -16,7 +16,7 @@ layout( location = 4 ) uniform vec3 uSceneAmbient; //Global ambient scene
 
 layout ( binding = 0) uniform sampler2D uTexture;
 
-in vec3 v2fNormal;
+
 
 void main()
 {

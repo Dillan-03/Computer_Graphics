@@ -278,8 +278,9 @@ int main() try
 		OGL_CHECKPOINT_DEBUG();
 
 		// Clear color buffer to specified clear color (glClearColor())
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		//We want to draw with our prpadVertexCountogram
+		//We want to draw with our scene
 		glUseProgram(prog.programId());
 
 		OGL_CHECKPOINT_DEBUG();
@@ -296,7 +297,7 @@ int main() try
 			loc, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
-		
+		// Textures
 		glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureMap);
 
@@ -309,8 +310,6 @@ int main() try
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPad.v);
-
-		
 		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
 		// Drawing the second Pad
