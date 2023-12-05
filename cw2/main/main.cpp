@@ -16,6 +16,7 @@
 #include "../vmlib/vec4.hpp"
 #include "../vmlib/mat44.hpp"
 #include "../vmlib/mat33.hpp"
+#include "../vmlib/vec3.hpp"
 
 #include "defaults.hpp"
 #include "loadcustom.hpp"
@@ -37,8 +38,15 @@ namespace
 
 		struct CamCtrl_
 		{
+
+			//added variables for wasd 
 			bool cameraActive;
 			bool actionZoomIn, actionZoomOut;
+			bool actionLeft, actionRight;
+			bool up, down;
+
+			Vec3f position; 
+
 			
 			float phi, theta;
 			float radius;
@@ -62,6 +70,8 @@ namespace
 		GLFWwindow* window;
 	};
 }
+
+
 
 
 int main() try
@@ -196,6 +206,7 @@ int main() try
 	GLuint vaoPad = create_Padvao( Launchpad );
 	std::size_t padVertexCount = Launchpad.positions.size();
 
+	state.camControl.position = {0.0f, 0.0f, 0.0f}; // Set initial position
 
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
@@ -248,13 +259,46 @@ int main() try
 			angle -= 2.f*kPi_;
 
 		// Update camera state
-		if( state.camControl.actionZoomIn )
-			state.camControl.radius -= kMovementPerSecond_ * dt;
-		else if( state.camControl.actionZoomOut )
-			state.camControl.radius += kMovementPerSecond_ * dt;
+		// if( state.camControl.actionZoomIn )
+		// 	state.camControl.radius -= kMovementPerSecond_ * dt;
+		// else if( state.camControl.actionZoomOut )
+		// 	state.camControl.radius += kMovementPerSecond_ * dt;
 
-		if( state.camControl.radius <= 0.1f )
-			state.camControl.radius = 0.1f;
+		// if( state.camControl.radius <= 0.1f )
+		// 	state.camControl.radius = 0.1f;
+
+		Vec3f camDirection = {
+			static_cast<float>(sin(state.camControl.phi)),
+			0.0f,
+			static_cast<float>(cos(state.camControl.phi))
+		};
+
+		/*   PART ADDED FOR WASD  */
+
+		Vec3f camRight = normalize(cross({0.0f, 1.0f, 0.0f}, camDirection));
+		Vec3f camUp = normalize(cross(camRight, camDirection));
+
+		if(state.camControl.actionLeft) {
+			state.camControl.position -= camRight * kMovementPerSecond_ * dt;
+		}
+		if(state.camControl.actionRight) {
+			state.camControl.position += camRight * kMovementPerSecond_ * dt;
+		}
+		if(state.camControl.up) {
+			state.camControl.position.y += kMovementPerSecond_ * dt;
+		}
+		if(state.camControl.down) {
+			state.camControl.position.y -= kMovementPerSecond_ * dt;
+		}
+		if(state.camControl.actionZoomOut) {
+			state.camControl.position += camDirection * kMovementPerSecond_ * dt;
+		}
+
+		// Forward movement
+		if(state.camControl.actionZoomIn) {
+			state.camControl.position -= camDirection * kMovementPerSecond_ * dt;
+		}
+
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
@@ -263,7 +307,7 @@ int main() try
 		Mat44f staticTerrain = make_rotation_y(0);
 		Mat44f Rx = make_rotation_x( state.camControl.theta );
 		Mat44f Ry = make_rotation_y( state.camControl.phi );
-		Mat44f T = make_translation( { 0.f, 0.f, -state.camControl.radius } );
+		Mat44f T = make_translation( -state.camControl.position );
 		Mat44f world2camera = Ry * Rx * T;
 		Mat44f projection = make_perspective_projection(
 			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
@@ -424,6 +468,22 @@ namespace
 					}
 				
 			}
+
+			switch (aKey) {
+				case GLFW_KEY_A:
+					state->camControl.actionLeft = (aAction != GLFW_RELEASE);
+					break;
+				case GLFW_KEY_D:
+					state->camControl.actionRight = (aAction != GLFW_RELEASE);
+					break;
+				case GLFW_KEY_Q:
+					state->camControl.up = (aAction != GLFW_RELEASE);
+					break;
+				case GLFW_KEY_E:
+					state->camControl.down = (aAction != GLFW_RELEASE);
+					break;
+
+        	}
 
 			// Space toggles camera
 			if( GLFW_KEY_SPACE == aKey && GLFW_PRESS == aAction )
