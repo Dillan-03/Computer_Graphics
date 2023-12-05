@@ -273,7 +273,7 @@ int main() try
 
 		// Create cameraworld on first pad
 		// Only need to update the model2world to move the pad around 
-		Mat44f model2worldPad = make_translation( {0.0f, -0.969504, 20.0f} );
+		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
 		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
 
 		//Create cameraWorld on second pad 
@@ -330,6 +330,12 @@ int main() try
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPad.v);
+			
+		GLuint locPad = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+		glUniformMatrix3fv(
+			locPad, // make sure this matches the location = N in the vertex shader!
+			1, GL_TRUE, normalMatrix.v
+		);
 		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
 		//Lighting uniform values for first pad
@@ -341,6 +347,11 @@ int main() try
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPadsecond.v);
+			GLuint locPadSecond = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+		glUniformMatrix3fv(
+			locPadSecond, // make sure this matches the location = N in the vertex shader!
+			1, GL_TRUE, normalMatrix.v
+		);
 		//Draw a single triangle starting at index 0
 		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 

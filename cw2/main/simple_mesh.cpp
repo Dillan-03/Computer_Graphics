@@ -134,7 +134,7 @@ GLuint create_Padvao( SimpleMeshDataNoTexture const& aMeshData )
     glEnableVertexAttribArray(2);
 
 
-	glEnableVertexAttribArray(3);
+	// glEnableVertexAttribArray(3);
 
 
 	// Reset state
