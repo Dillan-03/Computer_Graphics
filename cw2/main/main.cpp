@@ -352,15 +352,14 @@ int main() try
 			locPadSecond, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
-		//Draw a single triangle starting at index 0
-		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
-
 		//Lighting uniform values for second pad
 		glUniform3fv( 2, 1, &lightDir.x );
 		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
-		
+		//Draw a single triangle starting at index 0
+		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
 		
 		OGL_CHECKPOINT_DEBUG();
 
