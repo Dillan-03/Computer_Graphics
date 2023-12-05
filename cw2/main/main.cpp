@@ -31,7 +31,9 @@ namespace
 
 	struct State_
 	{
-		ShaderProgram* prog;
+		ShaderProgram* terrain;// Shader program for the map
+		ShaderProgram* pad; //Shader Program for the pad  
+  
 
 		struct CamCtrl_
 		{
@@ -163,19 +165,24 @@ int main() try
 
 	glViewport( 0, 0, iwidth, iheight );
 	// Load shader program
-	ShaderProgram prog( {
+	ShaderProgram terrain( {
 		{ GL_VERTEX_SHADER, "assets/default.vert" },
 		{ GL_FRAGMENT_SHADER, "assets/default.frag" }
 	} );
-
-	state.prog = &prog;
+	state.terrain = &terrain;
 	state.camControl.radius = 10.f;
+
+	ShaderProgram pad( {
+		{ GL_VERTEX_SHADER, "assets/pad.vert" },
+		{ GL_FRAGMENT_SHADER, "assets/pad.frag" }
+	} );
+	state.pad = &pad;
 
 	// Animation state
 	auto last = Clock::now();
 	float angle = 0.f;
 
-	//Loading in Map
+	//Loading in map
 	SimpleMeshData map = load_wavefront_obj("assets/parlahti.obj");
 	GLuint vao = create_vao( map );
 	std::size_t VertexCount = map.positions.size();
@@ -185,9 +192,9 @@ int main() try
 	
 
 	//Loading in LandingPad
-	SimpleMeshData pad = load_wavefront_obj("assets/landingpad.obj");
-	GLuint vaoPad = create_vao( pad );
-	std::size_t padVertexCount = pad.positions.size();
+	SimpleMeshDataNoTexture Launchpad = load_pad("assets/landingpad.obj");
+	GLuint vaoPad = create_Padvao( Launchpad );
+	std::size_t padVertexCount = Launchpad.positions.size();
 
 
 	// Other initialization & loading
@@ -280,45 +287,28 @@ int main() try
 		// Clear color buffer to specified clear color (glClearColor())
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//We want to draw with our scene
-		glUseProgram(prog.programId());
-
+		
 		OGL_CHECKPOINT_DEBUG();
 
 		//Source input as defined in our VAO
 		//Drawing the map
 		// --------------
+		//We want to draw with our scene
+		glUseProgram(state.terrain->programId());
+
 		glBindVertexArray(vao);	
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorld.v);
-		GLuint loc = glGetUniformLocation(prog.programId(), "uNormalMatrix");
+		GLuint loc = glGetUniformLocation(state.terrain->programId(), "uNormalMatrix");
 		glUniformMatrix3fv(
 			loc, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
+
 		// Textures to match to the map texture file 
 		glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureMap);
-
-		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
-
-
-		//Drawing the Pad
-		// -------------
-		glBindVertexArray(vaoPad);
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorldPad.v);
-		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
-
-		// Drawing the second Pad
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorldPadsecond.v);
-		//Draw a single triangle starting at index 0
-		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
-
 
 		//Lighting uniform values 
 		Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
@@ -326,10 +316,41 @@ int main() try
 		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
+		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
 
 		//Reset state
 		glBindVertexArray(0);
 		glUseProgram(0);
+		
+		//Drawing the Pad
+		// -------------
+		glUseProgram(state.pad->programId());
+
+		glBindVertexArray(vaoPad);
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorldPad.v);
+		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+		//Lighting uniform values for first pad
+		glUniform3fv( 2, 1, &lightDir.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+		// // Drawing the second Pad
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorldPadsecond.v);
+		//Draw a single triangle starting at index 0
+		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+		//Lighting uniform values for second pad
+		glUniform3fv( 2, 1, &lightDir.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+		
+		
 		OGL_CHECKPOINT_DEBUG();
 
 		// Display results
@@ -337,7 +358,9 @@ int main() try
 	}
 
 	// Cleanup.
-	state.prog = nullptr;
+	state.pad = nullptr;
+	state.terrain = nullptr;
+
 	//TODO: additional cleanup
 
 	glBindVertexArray(0);
@@ -374,11 +397,13 @@ namespace
 			// R-key reloads shaders.
 			if( GLFW_KEY_R == aKey && GLFW_PRESS == aAction )
 			{
-				if( state->prog )
-				{
+				
 					try
 					{
-						state->prog->reload();
+						state->terrain->reload();
+						state->pad->reload();
+
+
 						std::fprintf( stderr, "Shaders reloaded and recompiled.\n" );
 					}
 					catch( std::exception const& eErr )
@@ -387,7 +412,7 @@ namespace
 						std::fprintf( stderr, "%s\n", eErr.what() );
 						std::fprintf( stderr, "Keeping old shader.\n" );
 					}
-				}
+				
 			}
 
 			// Space toggles camera

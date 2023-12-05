@@ -10,7 +10,7 @@ in vec3 v2fNormal;
 layout( location = 0 ) out vec3 oColor;
 
 
-layout( location = 2 ) uniform vec3 uLightDir; // should be normalized! kuLightDirk = 1
+layout( location = 2 ) uniform vec3 uLightDir; // should be normalized LightDir = 1
 layout( location = 3 ) uniform vec3 uLightDiffuse; //Diffuse illumination
 layout( location = 4 ) uniform vec3 uSceneAmbient; //Global ambient scene
 
