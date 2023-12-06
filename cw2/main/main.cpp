@@ -22,6 +22,7 @@
 #include "loadcustom.hpp"
 #include "cone.hpp"
 #include "cylinder.hpp"
+#include "cube.hpp"
 #include "simple_mesh.hpp"
 
 
@@ -226,8 +227,12 @@ int main() try
 					make_scaling(5.f, 0.1f, 0.1f));
 	SimpleMeshDataNoTexture xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
 					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
+	// Make a cube model
+	// Example: Create a cube scaled by a factor of 2 in each dimension
+	SimpleMeshDataNoTexture cube = make_cube(true, 16, {1.f, 0.f, 0.f}, 
+					make_scaling(5.f, 0.1f, 0.1f));
 	auto xarrow = concatenate(std::move(xcyl), xcone);
-
+	// auto xarrow = concatenate(concatenate(std::move(cube), xcyl), xcone);
 
 	// auto allArrows = concatenate(concatenate(std::move(xarrow));
 

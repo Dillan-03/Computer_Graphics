@@ -66,11 +66,13 @@ GENERATED :=
 OBJECTS :=
 
 GENERATED += $(OBJDIR)/cone.o
+GENERATED += $(OBJDIR)/cube.o
 GENERATED += $(OBJDIR)/cylinder.o
 GENERATED += $(OBJDIR)/loadcustom.o
 GENERATED += $(OBJDIR)/main.o
 GENERATED += $(OBJDIR)/simple_mesh.o
 OBJECTS += $(OBJDIR)/cone.o
+OBJECTS += $(OBJDIR)/cube.o
 OBJECTS += $(OBJDIR)/cylinder.o
 OBJECTS += $(OBJDIR)/loadcustom.o
 OBJECTS += $(OBJDIR)/main.o
@@ -139,6 +141,9 @@ endif
 # #############################################
 
 $(OBJDIR)/cone.o: cone.cpp
+	@echo $(notdir $<)
+	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
+$(OBJDIR)/cube.o: cube.cpp
 	@echo $(notdir $<)
 	$(SILENT) $(CXX) $(ALL_CXXFLAGS) $(FORCE_INCLUDE) -o "$@" -MF "$(@:%.o=%.d)" -c "$<"
 $(OBJDIR)/cylinder.o: cylinder.cpp
