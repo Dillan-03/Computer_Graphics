@@ -228,17 +228,11 @@ int main() try
 	SimpleMeshDataNoTexture xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
 					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
 	// Make a cube model
-	// Example: Create a cube scaled by a factor of 2 in each dimension
-	// Example: Create a cube scaled by a factor of 2 in each dimension
-	SimpleMeshDataNoTexture cube = make_cube(16, {1.f, 0.f, 0.f}, make_scaling(500.f, 500.f, 500.f) * make_translation({5.f, 0.f, 0.f}));
+	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 0.f, 0.f}));
 
-	auto xarrow = concatenate(std::move(xcyl), xcone);
-	// auto xarrow = concatenate(concatenate(std::move(cube), xcyl), xcone);
 
-	// auto allArrows = concatenate(concatenate(std::move(xarrow));
-
-	GLuint vaoShape = create_novaoTexture(xarrow); 
-	std::size_t shapevertexCounts = xarrow.positions.size();
+	// GLuint vaoShape = create_novaoTexture(xarrow); 
+	// std::size_t shapevertexCounts = xarrow.positions.size();
 
 	GLuint vaoCube = create_novaoTexture(cube);
 	std::size_t shapevertexCounts2 = cube.positions.size();
@@ -381,7 +375,7 @@ int main() try
 		Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
 		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 
-		// ProjCameraWorld for shapes
+		// // ProjCameraWorld for shapes
 		// Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
 		// Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 		
@@ -447,7 +441,7 @@ int main() try
 		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
-		// // Drawing the second Pad
+		// Drawing the second Pad
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPadsecond.v);
@@ -484,10 +478,10 @@ int main() try
 		);
 		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts2); 
 
-		//Lighting uniform values for first pad
-		glUniform3fv( 2, 1, &lightDir.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		// //Lighting uniform values for first pad
+		// glUniform3fv( 2, 1, &lightDir.x );
+		// glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		// glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 		
 		OGL_CHECKPOINT_DEBUG();
 

@@ -1,5 +1,5 @@
-#ifndef CUBE_HPP_PX_120623
-#define CUBE_HPP_PX_120623
+#ifndef CUBE_HPP_6874B39C_112D_4D34_BD85_AB81A730955B
+#define CUBE_HPP_6874B39C_112D_4D34_BD85_AB81A730955B
 
 #include <vector>
 #include <cstdlib>
@@ -8,10 +8,95 @@
 #include "../vmlib/vec3.hpp"
 #include "../vmlib/mat44.hpp"
 
-SimpleMeshDataNoTexture make_cube(
-    std::size_t aSubdivs = 1,
-    Vec3f aColor = { 1.f, 1.f, 1.f },
-    Mat44f aPreTransform = kIdentity44f
-);
+// This defines the vertex data for a colored unit cube.
+SimpleMeshDataNoTexture make_cube(std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform);
 
-#endif // CUBE_HPP_PX_120623
+constexpr float const kCubePositions[] = {
+	+1.f, +1.f, -1.f,
+	-1.f, +1.f, -1.f,
+	-1.f, +1.f, +1.f,
+	+1.f, +1.f, -1.f,
+	-1.f, +1.f, +1.f,
+	+1.f, +1.f, +1.f,
+
+	+1.f, -1.f, +1.f,
+	+1.f, +1.f, +1.f,
+	-1.f, +1.f, +1.f,
+	+1.f, -1.f, +1.f,
+	-1.f, +1.f, +1.f,
+	-1.f, -1.f, +1.f,
+
+	-1.f, -1.f, +1.f,
+	-1.f, +1.f, +1.f,
+	-1.f, +1.f, -1.f,
+	-1.f, -1.f, +1.f,
+	-1.f, +1.f, -1.f,
+	-1.f, -1.f, -1.f,
+
+	-1.f, -1.f, -1.f,
+	+1.f, -1.f, -1.f,
+	+1.f, -1.f, +1.f,
+	-1.f, -1.f, -1.f,
+	+1.f, -1.f, +1.f,
+	-1.f, -1.f, +1.f,
+
+	+1.f, -1.f, -1.f,
+	+1.f, +1.f, -1.f,
+	+1.f, +1.f, +1.f,
+	+1.f, -1.f, -1.f,
+	+1.f, +1.f, +1.f,
+	+1.f, -1.f, +1.f,
+
+	-1.f, -1.f, -1.f,
+	-1.f, +1.f, -1.f,
+	+1.f, +1.f, -1.f,
+	-1.f, -1.f, -1.f,
+	+1.f, +1.f, -1.f,
+	+1.f, -1.f, -1.f,
+};
+
+constexpr float const kCubeColors[] = {
+	+1.f, +0.f, +0.f,
+	+1.f, +0.f, +0.f,
+	+1.f, +0.f, +0.f,
+	+1.f, +0.f, +0.f,
+	+1.f, +0.f, +0.f,
+	+1.f, +0.f, +0.f,
+
+	+0.f, +1.f, +0.f,
+	+0.f, +1.f, +0.f,
+	+0.f, +1.f, +0.f,
+	+0.f, +1.f, +0.f,
+	+0.f, +1.f, +0.f,
+	+0.f, +1.f, +0.f,
+
+	+0.f, +0.f, +1.f,
+	+0.f, +0.f, +1.f,
+	+0.f, +0.f, +1.f,
+	+0.f, +0.f, +1.f,
+	+0.f, +0.f, +1.f,
+	+0.f, +0.f, +1.f,
+
+	+1.f, +0.f, +1.f,
+	+1.f, +0.f, +1.f,
+	+1.f, +0.f, +1.f,
+	+1.f, +0.f, +1.f,
+	+1.f, +0.f, +1.f,
+	+1.f, +0.f, +1.f,
+
+	+1.f, +1.f, +0.f,
+	+1.f, +1.f, +0.f,
+	+1.f, +1.f, +0.f,
+	+1.f, +1.f, +0.f,
+	+1.f, +1.f, +0.f,
+	+1.f, +1.f, +0.f,
+
+	+0.f, +1.f, +1.f,
+	+0.f, +1.f, +1.f,
+	+0.f, +1.f, +1.f,
+	+0.f, +1.f, +1.f,
+	+0.f, +1.f, +1.f,
+	+0.f, +1.f, +1.f
+};
+
+#endif // CUBE_HPP_6874B39C_112D_4D34_BD85_AB81A730955B
