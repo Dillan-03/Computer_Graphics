@@ -1,6 +1,6 @@
 #include "simple_mesh.hpp"
 
-SimpleMeshData concatenate( SimpleMeshData aM, SimpleMeshData const& aN )
+SimpleMeshDataNoTexture concatenate( SimpleMeshDataNoTexture aM, SimpleMeshDataNoTexture const& aN )
 {
 	aM.positions.insert( aM.positions.end(), aN.positions.begin(), aN.positions.end() );
 	aM.colors.insert( aM.colors.end(), aN.colors.begin(), aN.colors.end() );
@@ -86,8 +86,8 @@ GLuint create_vao( SimpleMeshData const& aMeshData )
 	return vao;
 }
 
-//Vao for Landing Pad
-GLuint create_Padvao( SimpleMeshDataNoTexture const& aMeshData )
+//Vao for no Textures
+GLuint create_novaoTexture( SimpleMeshDataNoTexture const& aMeshData )
 {
 	//TODO: implement me
 	GLuint positionVBO = 0; 

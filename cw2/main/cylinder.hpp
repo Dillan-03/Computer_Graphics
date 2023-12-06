@@ -11,7 +11,7 @@
 #include "../vmlib/mat44.hpp"
 
 
-SimpleMeshData make_cylinder(
+SimpleMeshDataNoTexture make_cylinder(
 	bool aCapped = true,
 	std::size_t aSubdivs = 16,
 	Vec3f aColor = { 1.f, 1.f, 1.f },

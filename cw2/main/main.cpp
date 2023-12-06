@@ -20,6 +20,10 @@
 
 #include "defaults.hpp"
 #include "loadcustom.hpp"
+#include "cone.hpp"
+#include "cylinder.hpp"
+#include "simple_mesh.hpp"
+
 
 namespace
 {
@@ -34,7 +38,6 @@ namespace
 	{
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
-  
 
 		struct CamCtrl_
 		{
@@ -198,20 +201,40 @@ int main() try
 	float angle = 0.f;
 
 	//Loading in map
+	// ------------------
 	SimpleMeshData map = load_wavefront_obj("assets/parlahti.obj");
 	GLuint vao = create_vao( map );
 	std::size_t VertexCount = map.positions.size();
 
 	//Loading in the texture
+	// ------------------
 	GLuint textureMap = load_texture_world("assets/L4343A-4k.jpeg");
 	
 	//Loading in LandingPad
-	SimpleMeshDataNoTexture Launchpad = load_pad("assets/landingpad.obj");
-	GLuint vaoPad = create_Padvao( Launchpad );
+	// ------------------
+	SimpleMeshDataNoTexture Launchpad = load_noTexture("assets/landingpad.obj");
+	GLuint vaoPad = create_novaoTexture( Launchpad );
 	std::size_t padVertexCount = Launchpad.positions.size();
 
 	state.camControl.position = {0.0f, 0.0f, 0.0f}; // Set initial position
 	float speed = kMovementPerSecond_; // Set initial speed
+
+		
+	// Make 3D Model of a space vehicle
+	// ------------------
+	SimpleMeshDataNoTexture xcyl = make_cylinder(true, 16, {1.f, 0.f, 0.f}, 
+					make_scaling(5.f, 0.1f, 0.1f));
+	SimpleMeshDataNoTexture xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
+					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
+	auto xarrow = concatenate(std::move(xcyl), xcone);
+
+
+	// auto allArrows = concatenate(concatenate(std::move(xarrow));
+
+	GLuint vaoShape = create_novaoTexture(xarrow); 
+	std::size_t shapevertexCounts = xarrow.positions.size();
+		
+
 
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
@@ -347,8 +370,11 @@ int main() try
 		//Create cameraWorld on second pad 
 		Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
 		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
-		
 
+		// ProjCameraWorld for shapes
+		// Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
+		// Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+		
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
 
@@ -428,16 +454,45 @@ int main() try
 		//Draw a single triangle starting at index 0
 		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
+		//Reset state
+		glBindVertexArray(0);
+		glUseProgram(0);
+		
+		//Drawing the 3D shapes
+		// -------------
+		glUseProgram(state.pad->programId());
+
+		glBindVertexArray(vaoShape);
+		glUniformMatrix4fv(
+			0,
+			1, GL_TRUE, projCameraWorldPad.v);
+			
+		GLuint locBase = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+		glUniformMatrix3fv(
+			locBase, // make sure this matches the location = N in the vertex shader!
+			1, GL_TRUE, normalMatrix.v
+		);
+		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+
+		//Lighting uniform values for first pad
+		glUniform3fv( 2, 1, &lightDir.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 		
 		OGL_CHECKPOINT_DEBUG();
 
 		// Display results
 		glfwSwapBuffers( window );
+		glBindVertexArray(0);
+		glUseProgram(0);
+		
 	}
 
 	// Cleanup.
 	state.pad = nullptr;
 	state.terrain = nullptr;
+
+	
 
 	//TODO: additional cleanup
 

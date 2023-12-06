@@ -1,6 +1,6 @@
 #include "cone.hpp"
 
-SimpleMeshData make_cone( bool aCapped, std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform )
+SimpleMeshDataNoTexture make_cone( bool aCapped, std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform )
 {
 	//TODO: implement me
 	std::vector<Vec3f> pos;
@@ -48,6 +48,6 @@ SimpleMeshData make_cone( bool aCapped, std::size_t aSubdivs, Vec3f aColor, Mat4
 	}
 
     std::vector col(pos.size(), aColor);
-    return SimpleMeshData{ std::move(pos), std::move(col) };
+    return SimpleMeshDataNoTexture{ std::move(pos), std::move(col) };
 }
 

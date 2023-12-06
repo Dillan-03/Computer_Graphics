@@ -24,13 +24,13 @@ struct SimpleMeshDataNoTexture
 	std::vector<Vec3f> normals;
 };
 
-SimpleMeshData concatenate( SimpleMeshData, SimpleMeshData const& );
+SimpleMeshDataNoTexture concatenate( SimpleMeshDataNoTexture, SimpleMeshDataNoTexture const& );
 
 
 GLuint create_vao( SimpleMeshData const& );
 
-//Loading the Pad
-GLuint create_Padvao( SimpleMeshDataNoTexture const& aMeshData );
+//Loading the no Texture object
+GLuint create_novaoTexture( SimpleMeshDataNoTexture const& aMeshData );
 
 
 #endif // SIMPLE_MESH_HPP_C6B749D6_C83B_434C_9E58_F05FC27FEFC9

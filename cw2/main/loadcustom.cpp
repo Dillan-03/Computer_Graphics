@@ -102,7 +102,7 @@ GLuint load_texture_world( char const* aPath )
 }
 
 
-SimpleMeshDataNoTexture load_pad( char const* aPath )
+SimpleMeshDataNoTexture load_noTexture( char const* aPath )
 {
 	// Ask rapidobj to load the requested file
 	auto result = rapidobj::ParseFile( aPath );
