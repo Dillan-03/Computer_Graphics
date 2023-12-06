@@ -45,13 +45,14 @@ namespace
 			bool actionLeft, actionRight;
 			bool up, down;
 
-			Vec3f position; 
-
-			
+			Vec3f position;
+			// phi is rotation around the y-axis 
+			// theta is rotation around the x-axis
 			float phi, theta;
 			float radius;
-
 			float lastX, lastY;
+
+			Vec3f cameraView; // Camera's front view so that the controls are relative to the way we're looking
 		} camControl;
 	};
 	
@@ -259,51 +260,51 @@ int main() try
 			angle -= 2.f*kPi_;
 
 		// Update camera state
-		// if( state.camControl.actionZoomIn )
-		// 	state.camControl.radius -= kMovementPerSecond_ * dt;
-		// else if( state.camControl.actionZoomOut )
-		// 	state.camControl.radius += kMovementPerSecond_ * dt;
+		// PART ADDED FOR WASD  
+		// use the logic from the following [https://learnopengl.com/Getting-started/Camera]
+		// replacing glm for the phi and theta values
+		// Calculate camera cameraView vector
+		state.camControl.cameraView.x = cos(state.camControl.phi) * cos(state.camControl.theta);
+		state.camControl.cameraView.y = sin(state.camControl.theta);
+		state.camControl.cameraView.z = sin(state.camControl.phi) * cos(state.camControl.theta);
+		state.camControl.cameraView = normalize(state.camControl.cameraView);
+		Vec3f camNormalised = normalize(cross({0.0f, 1.0f, 0.0f}, state.camControl.cameraView));
 
-		// if( state.camControl.radius <= 0.1f )
-		// 	state.camControl.radius = 0.1f;
-
-		Vec3f camDirection = {
-			static_cast<float>(sin(state.camControl.phi)),
-			0.0f,
-			static_cast<float>(cos(state.camControl.phi))
-		};
-
-		/*   PART ADDED FOR WASD  */
-
-		Vec3f camRight = normalize(cross({0.0f, 1.0f, 0.0f}, camDirection));
-		Vec3f camUp = normalize(cross(camRight, camDirection));
-
-		if(state.camControl.actionLeft) {
-			state.camControl.position -= camRight * kMovementPerSecond_ * dt;
+		//A Keyboard input, moving left
+		if(state.camControl.actionLeft) {			
+			state.camControl.position -= state.camControl.cameraView * kMovementPerSecond_ * dt;
 		}
+
+		//D Keyboard input, moving right 
 		if(state.camControl.actionRight) {
-			state.camControl.position += camRight * kMovementPerSecond_ * dt;
+			state.camControl.position += state.camControl.cameraView * kMovementPerSecond_ * dt;
 		}
+
+		// S Keyboard input, moving backwards
+		if(state.camControl.actionZoomOut) {			
+			state.camControl.position -= camNormalised * kMovementPerSecond_ * dt;
+		}
+
+		// W Keyboard input Forward movement
+		if(state.camControl.actionZoomIn) {
+			state.camControl.position += camNormalised * kMovementPerSecond_ * dt;
+		}
+
+		// E Keyboard input, moving up 
 		if(state.camControl.up) {
 			state.camControl.position.y += kMovementPerSecond_ * dt;
 		}
+
+		// Q Keyboard input, moving down
 		if(state.camControl.down) {
 			state.camControl.position.y -= kMovementPerSecond_ * dt;
 		}
-		if(state.camControl.actionZoomOut) {
-			state.camControl.position += camDirection * kMovementPerSecond_ * dt;
-		}
-
-		// Forward movement
-		if(state.camControl.actionZoomIn) {
-			state.camControl.position -= camDirection * kMovementPerSecond_ * dt;
-		}
-
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
 		// Create cameraworld on map
 		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
+		// rotation = 0 so that the terrain isn't rotating when the camera moves around
 		Mat44f staticTerrain = make_rotation_y(0);
 		Mat44f Rx = make_rotation_x( state.camControl.theta );
 		Mat44f Ry = make_rotation_y( state.camControl.phi );
