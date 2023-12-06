@@ -229,8 +229,9 @@ int main() try
 					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
 	// Make a cube model
 	// Example: Create a cube scaled by a factor of 2 in each dimension
-	SimpleMeshDataNoTexture cube = make_cube(true, 16, {1.f, 0.f, 0.f}, 
-					make_scaling(5.f, 0.1f, 0.1f));
+	// Example: Create a cube scaled by a factor of 2 in each dimension
+	SimpleMeshDataNoTexture cube = make_cube(16, {1.f, 0.f, 0.f}, make_scaling(500.f, 500.f, 500.f) * make_translation({5.f, 0.f, 0.f}));
+
 	auto xarrow = concatenate(std::move(xcyl), xcone);
 	// auto xarrow = concatenate(concatenate(std::move(cube), xcyl), xcone);
 
@@ -238,6 +239,10 @@ int main() try
 
 	GLuint vaoShape = create_novaoTexture(xarrow); 
 	std::size_t shapevertexCounts = xarrow.positions.size();
+
+	GLuint vaoCube = create_novaoTexture(cube);
+	std::size_t shapevertexCounts2 = cube.positions.size();
+
 		
 
 
@@ -467,7 +472,7 @@ int main() try
 		// -------------
 		glUseProgram(state.pad->programId());
 
-		glBindVertexArray(vaoShape);
+		glBindVertexArray(vaoCube);
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPad.v);
@@ -477,7 +482,7 @@ int main() try
 			locBase, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
-		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts2); 
 
 		//Lighting uniform values for first pad
 		glUniform3fv( 2, 1, &lightDir.x );
