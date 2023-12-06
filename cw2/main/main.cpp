@@ -201,7 +201,6 @@ int main() try
 	//Loading in the texture
 	GLuint textureMap = load_texture_world("assets/L4343A-4k.jpeg");
 	
-
 	//Loading in LandingPad
 	SimpleMeshDataNoTexture Launchpad = load_pad("assets/landingpad.obj");
 	GLuint vaoPad = create_Padvao( Launchpad );
@@ -249,7 +248,6 @@ int main() try
 
 		// Update state
 		//TODO: update state
-
 		auto const now = Clock::now();
 		float dt = std::chrono::duration_cast<Secondsf>(now-last).count();
 		last = now;
@@ -264,9 +262,17 @@ int main() try
 		// use the logic from the following [https://learnopengl.com/Getting-started/Camera]
 		// replacing glm for the phi and theta values
 		// Calculate camera cameraView vector
+
+		// Find the x coordinatees of the camera 
 		state.camControl.cameraView.x = cos(state.camControl.phi) * cos(state.camControl.theta);
+
+		// Find the y coordinatees of the camera 
 		state.camControl.cameraView.y = sin(state.camControl.theta);
+
+		// Find the z coordinatees of the camera 
 		state.camControl.cameraView.z = sin(state.camControl.phi) * cos(state.camControl.theta);
+
+		// We need to normalise so that the calculations are consistent 
 		state.camControl.cameraView = normalize(state.camControl.cameraView);
 		Vec3f camNormalised = normalize(cross({0.0f, 1.0f, 0.0f}, state.camControl.cameraView));
 
