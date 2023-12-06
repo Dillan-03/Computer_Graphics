@@ -224,8 +224,8 @@ int main() try
 	// Make 3D Model of a space vehicle
 
 	// ------------------ Cone on top
-	SimpleMeshDataNoTexture xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
-					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
+	SimpleMeshDataNoTexture topCone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
+					make_scaling(0.25f, 0.5f, 0.25f) * make_translation({0.f, 3.25f, 0.f}) * make_rotation_z(3.1415926f / 2));
 
 	// ------------------ Base Cylinder
 	// Create the cylinder, apply a rotation to make it vertical, and then scale it.
@@ -234,14 +234,18 @@ int main() try
 	
 	// ------------------ Middle Cylinder
 	SimpleMeshDataNoTexture midCyl = make_cylinder(
-		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
-		
+		true, 16, {0.f, 0.f, 0.f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 1.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Top Cylinder
+	SimpleMeshDataNoTexture topCyl = make_cylinder(
+		true, 16, {0.f, 0.f, 10.f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 2.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+
 	// Make a cube model
 	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 2.f, 0.f}));
 
-	auto xarrow = concatenate(std::move(firstCyl), xcone);
-	GLuint vaoShape = create_novaoTexture(xarrow); 
-	std::size_t shapevertexCounts = xarrow.positions.size();
+	auto cylindersCombined = concatenate(concatenate(concatenate(std::move(firstCyl), midCyl), topCyl), topCone);
+	GLuint vaoShape = create_novaoTexture(cylindersCombined); 
+	std::size_t shapevertexCounts = cylindersCombined.positions.size();
 
 	GLuint vaoCube = create_novaoTexture(cube);
 	std::size_t shapevertexCounts2 = cube.positions.size();
@@ -381,7 +385,7 @@ int main() try
 		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
 
 		//Create cameraWorld on second pad 
-		Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
+		Mat44f model2worldPadsecond = make_translation( {0.f, -0.969504, -2.5f} );
 		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 
 		// // ProjCameraWorld for shapes
@@ -478,7 +482,7 @@ int main() try
 		glBindVertexArray(vaoShape);
 		glUniformMatrix4fv(
 			0,
-			1, GL_TRUE, projCameraWorldPad.v);
+			1, GL_TRUE, projCameraWorldPadsecond.v);
 			
 		GLuint locBase = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
 		glUniformMatrix3fv(
@@ -487,7 +491,7 @@ int main() try
 		);
 		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
-		// //Lighting uniform values for first pad
+		//Lighting uniform values for space vehicle
 		// glUniform3fv( 2, 1, &lightDir.x );
 		// glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		// glUniform3f( 4, 0.05f, 0.05f, 0.05f );
