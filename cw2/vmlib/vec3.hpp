@@ -116,6 +116,7 @@ Vec3f& operator/=( Vec3f& aLeft, float aRight ) noexcept
 }
 
 constexpr
+// Multiplying two factors
 Vec3f cross(const Vec3f& v1, const Vec3f& v2) noexcept 
 { 
     return {

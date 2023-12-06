@@ -1,36 +1,48 @@
 #include "cube.hpp"
 
+#include "../vmlib/mat33.hpp"
+
 SimpleMeshDataNoTexture make_cube(std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform) {
+    // Vectors to store the position, normals and colours 
     std::vector<Vec3f> pos;
     std::vector<Vec3f> normals;
     std::vector<Vec3f> colors;
 
-    // Iterate over each vertex defined in kCubePositions
+    Mat33f const N = mat44_to_mat33( transpose(invert(aPreTransform)) );
+
+    // Iterate over each vertex in kCubePositions
     for (std::size_t i = 0; i < sizeof(kCubePositions) / sizeof(kCubePositions[0]); i += 3) {
+
+        //Add the corresponding vertex from kCubePositions
         Vec3f vertex = Vec3f{
             kCubePositions[i],
             kCubePositions[i + 1],
             kCubePositions[i + 2]
         };
+     
+        pos.push_back({vertex.x,vertex.y,vertex.z});
 
-        // Apply the pre-transform to each vertex
-        Vec4f p4{ vertex.x, vertex.y, vertex.z, 1.f };
-        Vec4f transformed = aPreTransform * p4;
-        transformed /= transformed.w;
-        pos.push_back(Vec3f{ transformed.x, transformed.y, transformed.z });
 
-        // Add corresponding color from kCubeColors
+        // Add matching colour from kCubeColors
         colors.push_back(Vec3f{
             kCubeColors[i],
             kCubeColors[i + 1],
             kCubeColors[i + 2]
         });
 
-        // Calculate normal for each vertex (for simplicity, using face normals)
-        Vec3f normal = cross(pos[pos.size() - 2] - vertex, pos[pos.size() - 1] - vertex);
-        normals.push_back(normalize(normal));
+        // Calculate normals for each vertex 
+        normals.push_back((normalize(N * vertex )));
+    }
+
+    for( auto& p : pos )
+    {
+        Vec4f p4{ p.x, p.y, p.z, 1.f };
+		Vec4f t = aPreTransform * p4;
+		t /= t.w;
+		p = Vec3f{ t.x, t.y, t.z };
     }
 
     std::vector col(pos.size(),aColor);
+
     return SimpleMeshDataNoTexture{ std::move(pos), std::move(col), std::move(normals) };
 }

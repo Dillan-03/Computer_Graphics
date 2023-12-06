@@ -2,11 +2,8 @@
 
 #include "../vmlib/mat33.hpp"
 
-#include "cylinder.hpp"
-
 SimpleMeshDataNoTexture make_cylinder( bool aCapped, std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform )
 {
-	//TODO: implement me
 
 	std::vector<Vec3f> pos;
 	std::vector<Vec3f> normals; // Added for storing normals
