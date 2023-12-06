@@ -232,9 +232,10 @@ int main() try
 	SimpleMeshDataNoTexture firstCyl = make_cylinder(
 		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 	
-	
-	SimpleMeshDataNoTexture firstCyl = make_cylinder(
+	// ------------------ Middle Cylinder
+	SimpleMeshDataNoTexture midCyl = make_cylinder(
 		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+		
 	// Make a cube model
 	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 2.f, 0.f}));
 
