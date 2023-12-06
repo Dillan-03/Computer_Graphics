@@ -44,6 +44,10 @@ namespace
 			bool actionZoomIn, actionZoomOut;
 			bool actionLeft, actionRight;
 			bool up, down;
+			bool shift = false; // state for Shift key
+			bool control = false; // state for control key
+			bool speedBoostApplied = false; // speed up
+			bool slowDownApplied = false; // slow down 
 
 			Vec3f position;
 			// phi is rotation around the y-axis 
@@ -207,6 +211,7 @@ int main() try
 	std::size_t padVertexCount = Launchpad.positions.size();
 
 	state.camControl.position = {0.0f, 0.0f, 0.0f}; // Set initial position
+	float speed = kMovementPerSecond_; // Set initial speed
 
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
@@ -276,34 +281,46 @@ int main() try
 		state.camControl.cameraView = normalize(state.camControl.cameraView);
 		Vec3f camNormalised = normalize(cross({0.0f, 1.0f, 0.0f}, state.camControl.cameraView));
 
+		if (state.camControl.shift && state.camControl.speedBoostApplied)
+		{
+			speed = kMovementPerSecond_ * 2.0f; // Doubling the speed when shift is clicked
+		}
+		else if(state.camControl.control && state.camControl.slowDownApplied){
+			speed = kMovementPerSecond_ * 0.5f; // Halfing the speed when control is clicked
+		}
+		else
+		{
+			speed = kMovementPerSecond_;
+		}
+
 		//A Keyboard input, moving left
 		if(state.camControl.actionLeft) {			
-			state.camControl.position -= state.camControl.cameraView * kMovementPerSecond_ * dt;
+			state.camControl.position -= state.camControl.cameraView * speed * dt;
 		}
 
 		//D Keyboard input, moving right 
 		if(state.camControl.actionRight) {
-			state.camControl.position += state.camControl.cameraView * kMovementPerSecond_ * dt;
+			state.camControl.position += state.camControl.cameraView * speed * dt;
 		}
 
 		// S Keyboard input, moving backwards
 		if(state.camControl.actionZoomOut) {			
-			state.camControl.position -= camNormalised * kMovementPerSecond_ * dt;
+			state.camControl.position -= camNormalised * speed * dt;
 		}
 
 		// W Keyboard input Forward movement
 		if(state.camControl.actionZoomIn) {
-			state.camControl.position += camNormalised * kMovementPerSecond_ * dt;
+			state.camControl.position += camNormalised * speed * dt;
 		}
 
 		// E Keyboard input, moving up 
 		if(state.camControl.up) {
-			state.camControl.position.y += kMovementPerSecond_ * dt;
+			state.camControl.position.y += speed * dt;
 		}
 
 		// Q Keyboard input, moving down
 		if(state.camControl.down) {
-			state.camControl.position.y -= kMovementPerSecond_ * dt;
+			state.camControl.position.y -= speed * dt;
 		}
 
 		// Update: compute matrices
@@ -519,6 +536,33 @@ namespace
 						state->camControl.actionZoomOut = true;
 					else if( GLFW_RELEASE == aAction )
 						state->camControl.actionZoomOut = false;
+				}
+				else if (aKey == GLFW_KEY_LEFT_SHIFT || aKey == GLFW_KEY_RIGHT_SHIFT)
+				{
+					if (aAction == GLFW_PRESS && !state->camControl.speedBoostApplied)
+					{
+						state->camControl.speedBoostApplied = true;
+						state->camControl.shift = true;
+					}
+					else if (aAction == GLFW_RELEASE)
+					{
+						state->camControl.speedBoostApplied = false;
+						state->camControl.shift = false;
+					}
+				}
+
+				else if (aKey == GLFW_KEY_LEFT_CONTROL || aKey == GLFW_KEY_RIGHT_CONTROL)
+				{
+					if (aAction == GLFW_PRESS && !state->camControl.slowDownApplied)
+					{
+						state->camControl.slowDownApplied = true;
+						state->camControl.control = true;
+					}
+					else if (aAction == GLFW_RELEASE)
+					{
+						state->camControl.slowDownApplied = false;
+						state->camControl.control = false;
+					}
 				}
 			}
 		}
