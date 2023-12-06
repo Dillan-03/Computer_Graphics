@@ -219,20 +219,28 @@ int main() try
 
 	state.camControl.position = {0.0f, 0.0f, 0.0f}; // Set initial position
 	float speed = kMovementPerSecond_; // Set initial speed
-
+	float rotationAngleRadians = 3.1415926f / 2.0f; // kPi_ should be defined as 3.1415926f (π)
 		
 	// Make 3D Model of a space vehicle
-	// ------------------
-	SimpleMeshDataNoTexture xcyl = make_cylinder(true, 16, {1.f, 0.f, 0.f}, 
-					make_scaling(5.f, 0.1f, 0.1f));
+
+	// ------------------ Cone on top
 	SimpleMeshDataNoTexture xcone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
 					make_scaling(1.f, 0.3f, 0.3f) * make_translation({5.f, 0.f, 0.f}));
+
+	// ------------------ Base Cylinder
+	// Create the cylinder, apply a rotation to make it vertical, and then scale it.
+	SimpleMeshDataNoTexture firstCyl = make_cylinder(
+		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+	
+	
+	SimpleMeshDataNoTexture firstCyl = make_cylinder(
+		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 	// Make a cube model
-	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 0.f, 0.f}));
+	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 2.f, 0.f}));
 
-
-	// GLuint vaoShape = create_novaoTexture(xarrow); 
-	// std::size_t shapevertexCounts = xarrow.positions.size();
+	auto xarrow = concatenate(std::move(firstCyl), xcone);
+	GLuint vaoShape = create_novaoTexture(xarrow); 
+	std::size_t shapevertexCounts = xarrow.positions.size();
 
 	GLuint vaoCube = create_novaoTexture(cube);
 	std::size_t shapevertexCounts2 = cube.positions.size();
@@ -466,7 +474,7 @@ int main() try
 		// -------------
 		glUseProgram(state.pad->programId());
 
-		glBindVertexArray(vaoCube);
+		glBindVertexArray(vaoShape);
 		glUniformMatrix4fv(
 			0,
 			1, GL_TRUE, projCameraWorldPad.v);
@@ -476,7 +484,7 @@ int main() try
 			locBase, // make sure this matches the location = N in the vertex shader!
 			1, GL_TRUE, normalMatrix.v
 		);
-		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts2); 
+		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 		// //Lighting uniform values for first pad
 		// glUniform3fv( 2, 1, &lightDir.x );
