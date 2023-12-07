@@ -39,6 +39,7 @@ namespace
 	{
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
+		ShaderProgram* spaceVehicle; //Shader program for space vehicle 
 
 		struct CamCtrl_
 		{
@@ -197,6 +198,12 @@ int main() try
 	} );
 	state.pad = &pad;
 
+	ShaderProgram spaceVehicle( {
+			{ GL_VERTEX_SHADER, "assets/spaceVehicle.vert" },
+			{ GL_FRAGMENT_SHADER, "assets/spaceVehicle.frag" }
+		} );
+    state.spaceVehicle = &spaceVehicle;
+
 	// Animation state
 	auto last = Clock::now();
 	float angle = 0.f;
@@ -219,38 +226,140 @@ int main() try
 
 	state.camControl.position = {0.0f, 0.0f, 0.0f}; // Set initial position
 	float speed = kMovementPerSecond_; // Set initial speed
-	float rotationAngleRadians = 3.1415926f / 2.0f; // kPi_ should be defined as 3.1415926f (π)
 		
 	// Make 3D Model of a space vehicle
 
+	//------------------- BIG CYLINDERS AND BIG CONE
 	// ------------------ Cone on top
-	SimpleMeshDataNoTexture topCone = make_cone(true, 16, {0.f, 0.f, 0.f}, 
-					make_scaling(0.25f, 0.5f, 0.25f) * make_translation({0.f, 3.25f, 0.f}) * make_rotation_z(3.1415926f / 2));
+	SimpleMeshDataNoTexture topCone = make_cone(true, 16, {0.58823529411f, 0.63529411764f, 0.67058823529f}, 
+					make_scaling(0.25f, 0.5f, 0.25f) * make_translation({0.f, 3.52f, 0.f}) * make_rotation_z(3.1415926f / 2));
 
 	// ------------------ Base Cylinder
 	// Create the cylinder, apply a rotation to make it vertical, and then scale it.
 	SimpleMeshDataNoTexture firstCyl = make_cylinder(
-		true, 16, {1.f, 0.f, 0.f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+		true, 16, {0.58823529411f, 0.63529411764f, 0.67058823529f},  make_scaling(0.25f, 0.5f, 0.25f)* make_translation({0.f, 0.52f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 	
 	// ------------------ Middle Cylinder
 	SimpleMeshDataNoTexture midCyl = make_cylinder(
-		true, 16, {0.f, 0.f, 0.f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 1.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+		true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 1.52f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 
 	// ------------------ Top Cylinder
 	SimpleMeshDataNoTexture topCyl = make_cylinder(
-		true, 16, {0.f, 0.f, 10.f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 2.25f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+		true, 16, {0.58823529411f, 0.63529411764f, 0.67058823529f},  make_scaling(0.25, 0.5f, 0.25f)* make_translation({0.f, 2.52f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 
-	// Make a cube model
-	SimpleMeshDataNoTexture cube = make_cube(1, {0.f, 0.f, 0.f}, make_scaling(0.1f, 0.1f, 0.1f) * make_translation({0.f, 2.f, 0.f}));
+	//-------------------------------------------------------------------------------------------------------------------------------------------
+	
+	//------------------- MINI ROCKETS FOR BOTTOM CYLINDER 
+	// ------------------ Mini Cylinder 1
+	SimpleMeshDataNoTexture miniCyl1 = make_cylinder(
+		true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({3.5f, 2.31f, 0.f}) * make_rotation_z(3.1415926f / 2) );
 
+	// ------------------ Mini cone on top 1
+	SimpleMeshDataNoTexture miniCone1 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({3.5f, 3.31f, 0.f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 2
+	SimpleMeshDataNoTexture miniCyl2 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({-3.5f, 2.31f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 2
+	SimpleMeshDataNoTexture miniCone2 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({-3.5f, 3.31f, 0.f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 3 
+	SimpleMeshDataNoTexture miniCyl3 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({0.f, 2.31f, 3.5f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 3
+	SimpleMeshDataNoTexture miniCone3 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({0.f, 3.31f, 3.5f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 4
+	SimpleMeshDataNoTexture miniCyl4 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({0.f, 2.31f, -3.5f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 4
+	SimpleMeshDataNoTexture miniCone4 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({0.f, 3.31f, -3.5f}) * make_rotation_z(3.1415926f / 2));
+
+	//-------------------------------------------------------------------------------------------------------------------------------------------
+	
+	//------------------- MINI ROCKETS FOR TOP CYLINDER 
+	// ------------------ Mini Cylinder 5
+	SimpleMeshDataNoTexture miniCyl5 = make_cylinder(
+		true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({3.5f, 8.31f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 5
+	SimpleMeshDataNoTexture miniCone5 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({3.5f, 9.31f, 0.f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 6
+	SimpleMeshDataNoTexture miniCyl6 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({-3.5f, 8.31f, 0.f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 6
+	SimpleMeshDataNoTexture miniCone6 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({-3.5f, 9.31f, 0.f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 7 
+	SimpleMeshDataNoTexture miniCyl7 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({0.f, 8.31f, 3.5f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 7
+	SimpleMeshDataNoTexture miniCone7 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({0.f, 9.31f, 3.5f}) * make_rotation_z(3.1415926f / 2));
+
+	// ------------------ Mini Cylinder 8
+	SimpleMeshDataNoTexture miniCyl8 = make_cylinder(
+			true, 16, {0.13725490196f, 0.14117647058f, 0.14117647058f},  make_scaling(0.08, 0.1667f, 0.08f)* make_translation({0.f, 8.31f, -3.5f}) * make_rotation_z(3.1415926f / 2) );
+
+	// ------------------ Mini cone on top 8
+	SimpleMeshDataNoTexture miniCone8 = make_cone(true, 16, {0.7294117647f, 0.12549019607f, 0.12549019607f}, 
+					make_scaling(0.08f, 0.1667f, 0.08f) * make_translation({0.f, 9.31f, -3.5f}) * make_rotation_z(3.1415926f / 2));
+
+	// Make a cuboid model
+    // ------------------- Cuboid 
+    SimpleMeshDataNoTexture cuboid = make_cube(1, {0.27450980392f, 0.30196078431f, 0.32156862745f}, make_scaling(0.25f, 0.004f, 0.25f) * make_translation({0.f, 65.f, 0.f}));
+
+
+    // Make 4 small cuboids
+    // ------------------- Small Cuboids
+    SimpleMeshDataNoTexture smallCuboidOne = make_cube(1, {0.13333333333f, 0.16078431372f, 0.14901960784f}, make_scaling(0.029f, 0.06f, 0.029f) * make_translation({-7.5f, 3.26f , -7.5f}));
+    SimpleMeshDataNoTexture smallCuboidTwo = make_cube(1, {0.13333333333f, 0.16078431372f, 0.14901960784f}, make_scaling(0.029f, 0.06f, 0.029f) * make_translation({7.5f, 3.26f , 7.5f}));
+    SimpleMeshDataNoTexture smallCuboidThree = make_cube(1, {0.13333333333f, 0.16078431372f, 0.14901960784f}, make_scaling(0.029f, 0.06f, 0.029f) * make_translation({7.5f, 3.26f , -7.5f}));
+    SimpleMeshDataNoTexture smallCuboidFour = make_cube(1, {0.13333333333f, 0.16078431372f, 0.14901960784f}, make_scaling(0.029f, 0.06f, 0.029f) * make_translation({-7.5f, 3.26f , 7.5f}));
+    auto smallCuboids = concatenate(concatenate(concatenate(concatenate(std::move(smallCuboidOne),smallCuboidTwo),smallCuboidThree),smallCuboidFour),cuboid);
+
+	// Make 4 cones for the thrusts 
+    SimpleMeshDataNoTexture smallConeOne = make_cone(true, 16, {0.13333333333f, 0.16078431372f, 0.14901960784f}, 
+                    make_scaling(0.09f, 0.15f, 0.09f) * make_translation({-2.4f, 0.2f, 2.4f}) * make_rotation_z(3.1415926f / 2));
+    SimpleMeshDataNoTexture smallConeTwo = make_cone(true, 16, {0.13333333333f, 0.16078431372f, 0.14901960784f}, 
+                    make_scaling(0.09f, 0.15f, 0.09f) * make_translation({2.4f, 0.2f, -2.4f}) * make_rotation_z(3.1415926f / 2));
+    SimpleMeshDataNoTexture smallConeThree = make_cone(true, 16, {0.13333333333f, 0.16078431372f, 0.14901960784f}, 
+                    make_scaling(0.09f, 0.15f, 0.09f) * make_translation({2.4f, 0.2f, 2.4f}) * make_rotation_z(3.1415926f / 2));
+    SimpleMeshDataNoTexture smallConeFour = make_cone(true, 16, {0.13333333333f, 0.16078431372f, 0.14901960784f}, 
+                    make_scaling(0.09f, 0.15f, 0.09f) * make_translation({-2.4f, 0.2f, -2.4f}) * make_rotation_z(3.1415926f / 2));
+    auto smallCones = concatenate(concatenate(concatenate(std::move(smallConeOne),smallConeTwo),smallConeThree),smallConeFour);
+
+	// Concatenating the base
+    auto base = concatenate(std::move(smallCuboids),smallCones);
+
+	// Concatenating the three big cylinders and the top cone
 	auto cylindersCombined = concatenate(concatenate(concatenate(std::move(firstCyl), midCyl), topCyl), topCone);
-	GLuint vaoShape = create_novaoTexture(cylindersCombined); 
-	std::size_t shapevertexCounts = cylindersCombined.positions.size();
 
-	GLuint vaoCube = create_novaoTexture(cube);
-	std::size_t shapevertexCounts2 = cube.positions.size();
+	// Concatenating the four mini spaceships on the bottom cylinder
+	auto miniCylbottom = concatenate(concatenate(concatenate(concatenate(concatenate(concatenate(concatenate
+	(std::move(miniCyl1), miniCone1), miniCyl2), miniCone2), miniCyl3), miniCone3), miniCyl4), miniCone4);
 
-		
+	// Concatenating the four mini spaceships on the top cylinder
+	auto miniCyltop = concatenate(concatenate(concatenate(concatenate(concatenate(concatenate(concatenate
+	(std::move(miniCyl5), miniCone5), miniCyl6), miniCone6), miniCyl7), miniCone7), miniCyl8), miniCone8);
+
+	// Combining all to spaceship 
+	auto spaceShip = concatenate(concatenate(concatenate(std::move(cylindersCombined), miniCylbottom), miniCyltop), base);
+
+	GLuint vaoShape = create_novaoTexture(spaceShip); 
+	std::size_t shapevertexCounts = spaceShip.positions.size();
 
 
 	// Other initialization & loading
@@ -385,13 +494,13 @@ int main() try
 		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
 
 		//Create cameraWorld on second pad 
-		Mat44f model2worldPadsecond = make_translation( {0.f, -0.969504, -2.5f} );
+		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
 		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 
-		// // ProjCameraWorld for shapes
-		// Mat44f model2worldPadsecond = make_translation( {10.0f, -0.969504, -23.0f} );
-		// Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
-		
+		// ProjCameraWorld for spaceship
+        Mat44f model2worldVehicle = make_translation( {0.f, -0.969504, -2.5f} );
+        Mat44f projCameraWorldPadVehicle = projection * world2camera * model2worldVehicle;
+
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
 
@@ -477,24 +586,29 @@ int main() try
 		
 		//Drawing the 3D shapes
 		// -------------
-		glUseProgram(state.pad->programId());
+        glUseProgram(state.spaceVehicle->programId());
 
-		glBindVertexArray(vaoShape);
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorldPadsecond.v);
-			
-		GLuint locBase = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
-		glUniformMatrix3fv(
-			locBase, // make sure this matches the location = N in the vertex shader!
-			1, GL_TRUE, normalMatrix.v
-		);
+        glBindVertexArray(vaoShape);
+
+        glUniformMatrix4fv(
+            0,
+            1, GL_TRUE, projCameraWorldPadVehicle.v);
+
+        GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
+        glUniformMatrix3fv(
+            veh, // make sure this matches the location = N in the vertex shader!
+            1, GL_TRUE, normalMatrix.v
+        );
+
 		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 		//Lighting uniform values for space vehicle
-		// glUniform3fv( 2, 1, &lightDir.x );
-		// glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		// glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		Vec3f light1 = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+		glUniform3fv( 2, 1, &light1.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+
 		
 		OGL_CHECKPOINT_DEBUG();
 
@@ -508,6 +622,7 @@ int main() try
 	// Cleanup.
 	state.pad = nullptr;
 	state.terrain = nullptr;
+	state.spaceVehicle = nullptr;
 
 	
 

@@ -9,6 +9,7 @@
 
 #include "../vmlib/vec3.hpp"
 #include "../vmlib/mat44.hpp"
+#include "../vmlib/mat33.hpp"
 
 SimpleMeshDataNoTexture make_cone(
 	bool aCapped = true,
