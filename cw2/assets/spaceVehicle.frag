@@ -10,20 +10,24 @@ layout( location = 3 ) uniform vec3 uLightDiffuse; //Diffuse illumination
 layout( location = 4 ) uniform vec3 uSceneAmbient; //Global ambient scene
 
 // Activate the lighting on the space vehicle
-layout( location = 5 ) uniform bool uLighting; 
-
 
 void main()
 {
     vec3 normal = normalize(v2fNormal);
 
 
-   
-    float nDotL = max(0.0, dot(normal, uLightDir));
+    // Ensure the light direction is normalized
+    vec3 lightDir = normalize(uLightDir); 
 
-    oColor = (uSceneAmbient + nDotL * uLightDiffuse) * v2fColor;
+    // Ambient component
+    vec3 ambient = uSceneAmbient * v2fColor;
 
+    // Diffuse component
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = uLightDiffuse * diff * v2fColor;
 
- 
-
+    // Combining ambient and diffuse components
+    oColor = ambient + diffuse;
+  
 }
+ 
