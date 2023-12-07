@@ -40,6 +40,8 @@ namespace
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
 		ShaderProgram* spaceVehicle; //Shader program for space vehicle 
+		 Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
+		 bool thrust = false;
 
 		struct CamCtrl_
 		{
@@ -53,8 +55,12 @@ namespace
 			bool control = false; // state for control key
 			bool speedBoostApplied = false; // speed up
 			bool slowDownApplied = false; // slow down 
+			
+
+			float spaceVehicleThrust = 0.0f;  
 
 			Vec3f position;
+			
 			// phi is rotation around the y-axis 
 			// theta is rotation around the x-axis
 			float phi, theta;
@@ -472,6 +478,13 @@ int main() try
 			state.camControl.position.y -= speed * dt;
 		}
 
+		//F keyboard input, thrust on in the spaceship
+		if (state.thrust) 
+		{
+			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
+		}
+
+
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
 		// Create cameraworld on map
@@ -498,7 +511,7 @@ int main() try
 		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
 
 		// ProjCameraWorld for spaceship
-        Mat44f model2worldVehicle = make_translation( {0.f, -0.969504, -2.5f} );
+        Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
         Mat44f projCameraWorldPadVehicle = projection * world2camera * model2worldVehicle;
 
 		// Draw scene
@@ -583,6 +596,7 @@ int main() try
 		//Reset state
 		glBindVertexArray(0);
 		glUseProgram(0);
+
 		
 		//Drawing the 3D shapes
 		// -------------
@@ -600,37 +614,13 @@ int main() try
             1, GL_TRUE, normalMatrix.v
         );
 
-	
+		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 		//Lighting uniform values for space vehicle
-		// Define the properties for each light
-
-		Vec3f lightPos1 = normalize( Vec3f{ 1.0f, 1.0f, 1.0f }); // Position of the first light
-		Vec3f lightDiffuse1 = { 0.9f, 0.9f, 0.6f }; // Diffuse color of the first light
-		Vec3f lightSpecular1 = { 1.0f, 1.0f, 1.0f }; // Specular color of the first light
-
-		Vec3f lightPos2 =  normalize( { -1.0f, 1.0f, 1.0f }); // Position of the second light
-		Vec3f lightDiffuse2 = { 0.6f, 0.9f, 0.9f }; // Diffuse color of the second light
-		Vec3f lightSpecular2 = { 1.0f, 1.0f, 1.0f }; // Specular color of the second light
-
-		Vec3f lightPos3 =  normalize( { 1.0f, -1.0f, 1.0f }); // Position of the third light
-		Vec3f lightDiffuse3 = { 0.9f, 0.6f, 0.9f }; // Diffuse color of the third light
-		Vec3f lightSpecular3 = { 1.0f, 1.0f, 1.0f }; // Specular color of the third light
-
-		// Set the uniforms for each light
-		glUniform3f( 2, lightPos1.x, lightPos1.y, lightPos1.z );
-		glUniform3f( 3, lightDiffuse1.x, lightDiffuse1.y, lightDiffuse1.z );
-		glUniform3f( 4, lightSpecular1.x, lightSpecular1.y, lightSpecular1.z );
-
-		glUniform3f( 2, lightPos2.x, lightPos2.y, lightPos2.z );
-		glUniform3f( 3, lightDiffuse2.x, lightDiffuse2.y, lightDiffuse2.z );
-		glUniform3f( 4, lightSpecular2.x, lightSpecular2.y, lightSpecular2.z );
-
-		glUniform3f( 2, lightPos3.x, lightPos3.y, lightPos3.z );
-		glUniform3f( 3, lightDiffuse3.x, lightDiffuse3.y, lightDiffuse3.z );
-		glUniform3f( 4, lightSpecular3.x, lightSpecular3.y, lightSpecular3.z );
-
-		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+		Vec3f light1 = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+		glUniform3fv( 2, 1, &light1.x );
+		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
 
 		
@@ -775,20 +765,23 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-
-				//Spacevehicle animate 
-				else if (aKey == GLFW_KEY_F )
+				else if (aKey == GLFW_KEY_F) 
 				{
-					if (aAction == GLFW_PRESS && !state->camControl.slowDownApplied)
+					if (aAction == GLFW_PRESS) 
 					{
-						// Moving the vehicle
-						
-					
-					}
+						state->thrust = true;
+					} 
 					else if (aAction == GLFW_RELEASE)
+					 {
+						state->thrust = false;
+					}
+				}
+				else if (aKey == GLFW_KEY_R)
+				{
+					if(aAction == GLFW_Press)
+
 					{
-						state->camControl.slowDownApplied = false;
-						state->camControl.control = false;
+						state ->
 					}
 				}
 			}
