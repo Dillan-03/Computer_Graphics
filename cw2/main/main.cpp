@@ -778,10 +778,11 @@ namespace
 				}
 				else if (aKey == GLFW_KEY_R)
 				{
-					if(aAction == GLFW_Press)
+					if(aAction == GLFW_PRESS)
 
 					{
-						state ->
+						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+						
 					}
 				}
 			}
