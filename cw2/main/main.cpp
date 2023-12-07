@@ -600,13 +600,37 @@ int main() try
             1, GL_TRUE, normalMatrix.v
         );
 
-		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+	
 
 		//Lighting uniform values for space vehicle
-		Vec3f light1 = normalize( Vec3f{ 0.f, 1.f, -1.f } );
-		glUniform3fv( 2, 1, &light1.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		// Define the properties for each light
+
+		Vec3f lightPos1 = normalize( Vec3f{ 1.0f, 1.0f, 1.0f }); // Position of the first light
+		Vec3f lightDiffuse1 = { 0.9f, 0.9f, 0.6f }; // Diffuse color of the first light
+		Vec3f lightSpecular1 = { 1.0f, 1.0f, 1.0f }; // Specular color of the first light
+
+		Vec3f lightPos2 =  normalize( { -1.0f, 1.0f, 1.0f }); // Position of the second light
+		Vec3f lightDiffuse2 = { 0.6f, 0.9f, 0.9f }; // Diffuse color of the second light
+		Vec3f lightSpecular2 = { 1.0f, 1.0f, 1.0f }; // Specular color of the second light
+
+		Vec3f lightPos3 =  normalize( { 1.0f, -1.0f, 1.0f }); // Position of the third light
+		Vec3f lightDiffuse3 = { 0.9f, 0.6f, 0.9f }; // Diffuse color of the third light
+		Vec3f lightSpecular3 = { 1.0f, 1.0f, 1.0f }; // Specular color of the third light
+
+		// Set the uniforms for each light
+		glUniform3f( 2, lightPos1.x, lightPos1.y, lightPos1.z );
+		glUniform3f( 3, lightDiffuse1.x, lightDiffuse1.y, lightDiffuse1.z );
+		glUniform3f( 4, lightSpecular1.x, lightSpecular1.y, lightSpecular1.z );
+
+		glUniform3f( 2, lightPos2.x, lightPos2.y, lightPos2.z );
+		glUniform3f( 3, lightDiffuse2.x, lightDiffuse2.y, lightDiffuse2.z );
+		glUniform3f( 4, lightSpecular2.x, lightSpecular2.y, lightSpecular2.z );
+
+		glUniform3f( 2, lightPos3.x, lightPos3.y, lightPos3.z );
+		glUniform3f( 3, lightDiffuse3.x, lightDiffuse3.y, lightDiffuse3.z );
+		glUniform3f( 4, lightSpecular3.x, lightSpecular3.y, lightSpecular3.z );
+
+		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 
 		
@@ -744,6 +768,22 @@ namespace
 					{
 						state->camControl.slowDownApplied = true;
 						state->camControl.control = true;
+					}
+					else if (aAction == GLFW_RELEASE)
+					{
+						state->camControl.slowDownApplied = false;
+						state->camControl.control = false;
+					}
+				}
+
+				//Spacevehicle animate 
+				else if (aKey == GLFW_KEY_F )
+				{
+					if (aAction == GLFW_PRESS && !state->camControl.slowDownApplied)
+					{
+						// Moving the vehicle
+						
+					
 					}
 					else if (aAction == GLFW_RELEASE)
 					{
