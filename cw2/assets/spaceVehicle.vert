@@ -22,5 +22,5 @@ void main()
 
     v2fNormal = normalize(uNormalMatrix * iNormal);
 
-
+    v2fPosition = iPosition;
 }
