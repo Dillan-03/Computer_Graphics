@@ -11,6 +11,7 @@
 
     out vec3 v2fColor;
     out vec3 v2fNormal;
+    out vec3 v2fPosition;
 
 void main() 
 { 
