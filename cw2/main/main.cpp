@@ -494,7 +494,7 @@ int main() try
 		Mat44f Rx = make_rotation_x( state.camControl.theta );
 		Mat44f Ry = make_rotation_y( state.camControl.phi );
 		Mat44f T = make_translation( -state.camControl.position );
-		Mat44f world2camera = Ry * Rx * T;
+		Mat44f world2camera = Rx * Ry * T;
 		Mat44f projection = make_perspective_projection(
 			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
 			fbwidth/float(fbheight),
@@ -693,21 +693,15 @@ namespace
 					}
 				
 			}
-
+			
+			//Controls for animations
 			switch (aKey) {
-				case GLFW_KEY_A:
-					state->camControl.actionLeft = (aAction != GLFW_RELEASE);
+				case GLFW_KEY_F:
+					state->thrust = (aAction != GLFW_RELEASE);
 					break;
-				case GLFW_KEY_D:
-					state->camControl.actionRight = (aAction != GLFW_RELEASE);
+				case GLFW_KEY_R:
+					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
 					break;
-				case GLFW_KEY_Q:
-					state->camControl.up = (aAction != GLFW_RELEASE);
-					break;
-				case GLFW_KEY_E:
-					state->camControl.down = (aAction != GLFW_RELEASE);
-					break;
-
         	}
 
 			// Space toggles camera
@@ -724,6 +718,7 @@ namespace
 			// Camera controls if camera is active
 			if( state->camControl.cameraActive )
 			{
+				//WASDQE Controls
 				if( GLFW_KEY_W == aKey )
 				{
 					if( GLFW_PRESS == aAction )
@@ -731,6 +726,7 @@ namespace
 					else if( GLFW_RELEASE == aAction )
 						state->camControl.actionZoomIn = false;
 				}
+
 				else if( GLFW_KEY_S == aKey )
 				{
 					if( GLFW_PRESS == aAction )
@@ -738,6 +734,40 @@ namespace
 					else if( GLFW_RELEASE == aAction )
 						state->camControl.actionZoomOut = false;
 				}
+
+				else if (GLFW_KEY_A == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionLeft = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionLeft = false;
+				}
+
+				else if (GLFW_KEY_D == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionRight = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionRight = false;
+				}
+
+				else if (GLFW_KEY_Q == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.up = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.up = false;
+				}
+
+				else if (GLFW_KEY_E == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.down = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.down = false;
+				}
+
+				//Shift and Control keys for speeding up and slowing down
 				else if (aKey == GLFW_KEY_LEFT_SHIFT || aKey == GLFW_KEY_RIGHT_SHIFT)
 				{
 					if (aAction == GLFW_PRESS && !state->camControl.speedBoostApplied)
@@ -784,7 +814,7 @@ namespace
 						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
 						
 					}
-				}
+        }
 			}
 		}
 	}
