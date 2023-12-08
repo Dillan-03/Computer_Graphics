@@ -70,6 +70,8 @@ namespace
 			Vec3f cameraView; // Camera's front view so that the controls are relative to the way we're looking
 		} camControl;
 	};
+
+	
 	
 	
 	void glfw_callback_error_( int, char const* );
@@ -617,13 +619,33 @@ int main() try
 		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 		//Lighting uniform values for space vehicle
-		Vec3f light1 = normalize( Vec3f{ 0.f, 1.f, -1.f } );
-		glUniform3fv( 2, 1, &light1.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
+		Vec3f light2 = Vec3f{-1.0f, 1.0f, 10.0f}; // Light coming from the left and slightly above
+		Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
 
+		Vec3f lightColor1 = {1.0f, 0.0f, 4.0f};  
+		Vec3f lightColor2 = {5.0f, 1.0f, 0.0f};  
+		Vec3f lightColor3 = {0.0f, 2.0f, 1.0f}; 
 
-		
+		Vec3f cameraPos1 = {0.0f, -9.0f, 10.0f};
+		Vec3f cameraPos2  = {10.0f, 0.0f, 0.0f};
+		Vec3f cameraPos3  = {0.0f, 10.0f, -10.0f};
+
+		//Positional Light One
+		glUniform3fv( 2, 1, &light1.x); //Light Position
+		glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
+		glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 5, 1, &light2.x); //Light Position
+		glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
+		glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 8, 1, &light3.x); //Light Position
+		glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
+		glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
+
 		OGL_CHECKPOINT_DEBUG();
 
 		// Display results
