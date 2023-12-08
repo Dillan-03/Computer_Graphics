@@ -40,8 +40,16 @@ namespace
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
 		ShaderProgram* spaceVehicle; //Shader program for space vehicle 
-		 Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
-		 bool thrust = false;
+		Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
+		bool thrust = false;
+
+		//Bezier curve positions
+		Vec3f starting;
+		Vec3f control1;
+		Vec3f control2;
+		Vec3f ending;
+
+		float bezier = 0.0f;
 
 		struct CamCtrl_
 		{
@@ -70,8 +78,23 @@ namespace
 			Vec3f cameraView; // Camera's front view so that the controls are relative to the way we're looking
 		} camControl;
 	};
+
+	Vec3f curveBezier(Vec3f point0, Vec3f point1, Vec3f point2, Vec3f point3, float parameter) {
+		float inverseParameter = 1 - parameter;
+		float parameterSquared = parameter * parameter;
+		float uu = inverseParameter * inverseParameter;
+		float uuu = uu * inverseParameter;
+		float ttt = parameterSquared * parameter;
+
+		Vec3f p = uuu * point0; // First term
+		p += 3 * uu * parameter * point1; // Second term
+		p += 3 * inverseParameter * parameterSquared * point2; // Third term
+		p += ttt * point3; // Fourth term
+
+		return p;
+	}
 	
-	
+
 	void glfw_callback_error_( int, char const* );
 
 	void glfw_callback_key_( GLFWwindow*, int, int, int, int );
@@ -86,8 +109,6 @@ namespace
 		GLFWwindow* window;
 	};
 }
-
-
 
 
 int main() try
@@ -145,7 +166,12 @@ int main() try
 	// Set up event handling
 	// TODO: Additional event handling setup
 	State_ state{};
+	state.starting = state.spaceVehiclePosition; // Starting position of the spaceship
+	state.control1 = Vec3f{state.starting.x, state.starting.y + 10.0f, state.starting.z}; // First control point, go up
+	state.control2 = Vec3f{state.starting.x + 20.0f, state.control1.y, state.starting.z - 5.0f}; // Second control point, begin to level out
+	state.ending = Vec3f{state.starting.x + 40.0f, state.starting.y, state.starting.z - 10.0f}; // Ending point, horizontal state
 
+	state.bezier = 0.0f;
 	glfwSetWindowUserPointer( window, &state );
 
 	glfwSetKeyCallback( window, &glfw_callback_key_ );
@@ -479,11 +505,19 @@ int main() try
 		}
 
 		//F keyboard input, thrust on in the spaceship
-		if (state.thrust) 
-		{
-			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
-		}
+		// if (state.thrust) 
+		// {
+		// 	state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
+		// }
+		if (state.thrust) {
+			state.bezier += dt * 0.1f; // Adjust this rate to control the speed of the animation
+			if (state.bezier > 1.0f) {
+				state.bezier = 1.0f; // Cap the bezier at 1 to stay on the curve
+			}
 
+			// Use the Bezier curve to calculate the new position
+			state.spaceVehiclePosition = curveBezier(state.starting, state.control1, state.control2, state.ending, state.bezier);
+		}
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
@@ -701,6 +735,7 @@ namespace
 					break;
 				case GLFW_KEY_R:
 					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+					state->bezier = 0.0f;
 					break;
         	}
 
