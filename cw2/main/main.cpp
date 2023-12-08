@@ -70,6 +70,8 @@ namespace
 			Vec3f cameraView; // Camera's front view so that the controls are relative to the way we're looking
 		} camControl;
 	};
+
+	
 	
 	
 	void glfw_callback_error_( int, char const* );
@@ -494,7 +496,7 @@ int main() try
 		Mat44f Rx = make_rotation_x( state.camControl.theta );
 		Mat44f Ry = make_rotation_y( state.camControl.phi );
 		Mat44f T = make_translation( -state.camControl.position );
-		Mat44f world2camera = Ry * Rx * T;
+		Mat44f world2camera = Rx * Ry * T;
 		Mat44f projection = make_perspective_projection(
 			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
 			fbwidth/float(fbheight),
@@ -617,13 +619,33 @@ int main() try
 		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
 
 		//Lighting uniform values for space vehicle
-		Vec3f light1 = normalize( Vec3f{ 0.f, 1.f, -1.f } );
-		glUniform3fv( 2, 1, &light1.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
+		Vec3f light2 = Vec3f{-1.0f, 1.0f, 10.0f}; // Light coming from the left and slightly above
+		Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
 
+		Vec3f lightColor1 = {1.0f, 0.0f, 4.0f};  
+		Vec3f lightColor2 = {5.0f, 1.0f, 0.0f};  
+		Vec3f lightColor3 = {0.0f, 2.0f, 1.0f}; 
 
-		
+		Vec3f cameraPos1 = {0.0f, -9.0f, 10.0f};
+		Vec3f cameraPos2  = {10.0f, 0.0f, 0.0f};
+		Vec3f cameraPos3  = {0.0f, 10.0f, -10.0f};
+
+		//Positional Light One
+		glUniform3fv( 2, 1, &light1.x); //Light Position
+		glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
+		glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 5, 1, &light2.x); //Light Position
+		glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
+		glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 8, 1, &light3.x); //Light Position
+		glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
+		glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
+
 		OGL_CHECKPOINT_DEBUG();
 
 		// Display results
@@ -693,21 +715,15 @@ namespace
 					}
 				
 			}
-
+			
+			//Controls for animations
 			switch (aKey) {
-				case GLFW_KEY_A:
-					state->camControl.actionLeft = (aAction != GLFW_RELEASE);
+				case GLFW_KEY_F:
+					state->thrust = (aAction != GLFW_RELEASE);
 					break;
-				case GLFW_KEY_D:
-					state->camControl.actionRight = (aAction != GLFW_RELEASE);
+				case GLFW_KEY_R:
+					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
 					break;
-				case GLFW_KEY_Q:
-					state->camControl.up = (aAction != GLFW_RELEASE);
-					break;
-				case GLFW_KEY_E:
-					state->camControl.down = (aAction != GLFW_RELEASE);
-					break;
-
         	}
 
 			// Space toggles camera
@@ -724,6 +740,7 @@ namespace
 			// Camera controls if camera is active
 			if( state->camControl.cameraActive )
 			{
+				//WASDQE Controls
 				if( GLFW_KEY_W == aKey )
 				{
 					if( GLFW_PRESS == aAction )
@@ -731,6 +748,7 @@ namespace
 					else if( GLFW_RELEASE == aAction )
 						state->camControl.actionZoomIn = false;
 				}
+
 				else if( GLFW_KEY_S == aKey )
 				{
 					if( GLFW_PRESS == aAction )
@@ -738,6 +756,40 @@ namespace
 					else if( GLFW_RELEASE == aAction )
 						state->camControl.actionZoomOut = false;
 				}
+
+				else if (GLFW_KEY_A == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionLeft = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionLeft = false;
+				}
+
+				else if (GLFW_KEY_D == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.actionRight = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.actionRight = false;
+				}
+
+				else if (GLFW_KEY_Q == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.up = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.up = false;
+				}
+
+				else if (GLFW_KEY_E == aKey)
+				{
+					if( GLFW_PRESS == aAction )
+						state->camControl.down = true;
+					else if( GLFW_RELEASE == aAction )
+						state->camControl.down = false;
+				}
+
+				//Shift and Control keys for speeding up and slowing down
 				else if (aKey == GLFW_KEY_LEFT_SHIFT || aKey == GLFW_KEY_RIGHT_SHIFT)
 				{
 					if (aAction == GLFW_PRESS && !state->camControl.speedBoostApplied)
@@ -784,7 +836,7 @@ namespace
 						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
 						
 					}
-				}
+        }
 			}
 		}
 	}
