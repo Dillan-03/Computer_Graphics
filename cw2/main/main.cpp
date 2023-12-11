@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 #include "../support/error.hpp"
 #include "../support/program.hpp"
@@ -104,7 +105,6 @@ namespace
 
 int main() try
 {
-	
 	// Initialize GLFW
 	if( GLFW_TRUE != glfwInit() )
 	{
@@ -388,6 +388,7 @@ int main() try
 
 	OGL_CHECKPOINT_ALWAYS();
 
+
 	// Main loop
 	while( !glfwWindowShouldClose( window ) )
 	{
@@ -435,23 +436,35 @@ int main() try
 			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
 		}
 
+		// Assuming you have an up vector defined as follows
+		Vec3f upVector = {0.0f, 1.0f, 0.0f};
+
+   	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+    	// createViewMatrix is a hypothetical function to create a view matrix.
+	
+
+
 
 	//	Camera control and update
 
 		//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
 
    		// Update camera state based on the current mode
-		if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
-		{
-		// Set an offset from the space vehicle
-		Vec3f distance = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
+				if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
+				{
+			// Set an offset from the space vehicle
+			Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
 
-		// Continuously update camera position based on the space vehicle position and the offset
-		state.camControl.position = state.spaceVehiclePosition + distance;
+			// Update camera position based on the space vehicle position and the offset
+			state.camControl.position = state.spaceVehiclePosition + offset;
 
-		// Update camera view to always look at the space vehicle
-		state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+			// Update camera view to always look at the space vehicle
+			state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+
+			// Create the view matrix for the fixed distance camera
+			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
 		}
+
 
 		else 
 		{
@@ -526,18 +539,13 @@ int main() try
 		{
 			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
 		}
+				viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+
 	}
 	
 
 
-	if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
-	{
-		// Assuming you have an up vector defined as follows
-		Vec3f upVector = {0.0f, 1.0f, 0.0f};
-
-   	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
-    	// createViewMatrix is a hypothetical function to create a view matrix.
-	}	 
+		 
 
 
 		// Update: compute matrices
@@ -890,30 +898,41 @@ namespace
 						
 					}
         		}
+				//hardcode the phi and theta values so that the spaceship look at the same angle each time :
+				
+				const float fixedCameraPhi = 18.0299; // More to the left
+				const float fixedCameraTheta = 0.240; // More upward
+
+
+				// ... [in the part of your code where you handle key presses]
 				//C key keeps switching for each time
 				if (aKey == GLFW_KEY_C && aAction == GLFW_PRESS) 
 				{
-					switch (state->cameraMode) 
+					if (state->cameraMode == DEFAULT_CAMERA) 
 					{
-						case DEFAULT_CAMERA:
-							state->cameraMode = FIXED_DISTANCE_CAMERA;
+					state->camControl.phi = fixedCameraPhi;
+					state->camControl.theta = fixedCameraTheta;
+					state->cameraMode = FIXED_DISTANCE_CAMERA;
+				
+					} 
+					else if(state->cameraMode == FIXED_DISTANCE_CAMERA) 
+					{
 
-							break;
-
-						case FIXED_DISTANCE_CAMERA:
-							state->cameraMode = DEFAULT_CAMERA;
-							break;
-            		}
-       			}
+						state->cameraMode = DEFAULT_CAMERA;
+					}
+				}
+			
 
 			}
 		}
 	}
 
 	void glfw_callback_motion_(GLFWwindow* aWindow, double aX, double aY) {
-    if (auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) {
+    if (auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) 
+	{
         // First, check if we are in the FIXED_DISTANCE_CAMERA mode
-        if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
+        if (state->cameraMode == FIXED_DISTANCE_CAMERA) 
+		{
             return; // Disable mouse control for this mode
         }
 
