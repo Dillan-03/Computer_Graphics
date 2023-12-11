@@ -470,8 +470,6 @@ int main() try
 		{
 			// Reset the flag if we switch to a different camera mode
 			state.camControl.isFixedCameraInitialized = false;
-		
-        std::cout << "Current Phi: " << state.camControl.phi << ", Theta: " << state.camControl.theta << std::endl;
 
 		// Update camera state
 		// PART ADDED FOR WASD   // if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
@@ -917,10 +915,10 @@ namespace
 					state->cameraMode = FIXED_DISTANCE_CAMERA;
 				
 					} 
-					else  
+					else if(state->cameraMode == FIXED_DISTANCE_CAMERA) 
 					{
 
-					state->cameraMode = DEFAULT_CAMERA;
+						state->cameraMode = DEFAULT_CAMERA;
 					}
 				}
 			
@@ -974,4 +972,3 @@ namespace
 			glfwDestroyWindow( window );
 	}
 }
-
