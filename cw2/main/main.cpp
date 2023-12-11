@@ -50,8 +50,9 @@ namespace
 		Vec3f control1;
 		Vec3f control2;
 		Vec3f ending;
-		
+		float fRotation = 0.0f;
 		float rotateSpaceship = 0.0f;
+		bool stopped = false; 
 
 		float bezier = 0.0f;
 
@@ -555,71 +556,35 @@ int main() try
 		constexpr float ROTATION_SPEED = 0.4f; // rotation speed
 		float counter_speed = 0.64f; //slowly moving
 		float start_speed = 0.0f;
-		
-		if (state.thrust) 
-		{
+	
 
-			if (state.spaceVehiclePosition.y < height){
-				start_speed += speed * counter_speed;
-		
-				state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
-				// printf("%f -- %f -- %f\n",state.spaceVehiclePosition.x,state.spaceVehiclePosition.y,state.spaceVehiclePosition.z);
 
-			}
-			else{
-				
-				// Begin the bezier curve
+	if (state.thrust) {
+		if (state.spaceVehiclePosition.y < height) {
+			// Code to move spaceship vertically up to the height
+			start_speed += speed * counter_speed;
+			state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
+		} else {
+			// Begin the bezier curve
+			if (state.bezier < 0.8f) { // Only animate until 80% of the curve
 				state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
-				state.bezier = std::min(1.0f, state.bezier);
-								
-				if (state.bezier > 1.0f) {
-					state.bezier = 1.0f; // Cap the bezier at 1 to stay on the curve
-				}
+				state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
+				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
 
-				// printf("Calling Bezier function\n");
-				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier); 
-
-				state.rotateSpaceship += dt * ROTATION_SPEED; 
-				if (state.rotateSpaceship >= kPi_ / 2.f) 
-				{
-					// Cap the rotation at 90 degrees
+				// Update rotation until the spaceship has stopped
+				state.rotateSpaceship += dt * ROTATION_SPEED;
+				if (state.rotateSpaceship >= kPi_ / 2.f) {
 					state.rotateSpaceship = kPi_ / 2.f;
-					Mat44f rotationMatrix = make_rotation_z(-state.rotateSpaceship);
-
-					printf("%f\n",state.spaceVehiclePosition.x);
-					// return 0;
-
-			
 				}
-				Mat44f rotationMatrix = make_rotation_z(-state.rotateSpaceship);
-
-				model2worldVehicle = make_translation(state.spaceVehiclePosition)* rotationMatrix ;
-				projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
-					
-				// if (state.spaceVehiclePosition.x > {
-					// printf("x Coordinate: %f, Y Coordinate: %f, Z Coordinate: %f",state.spaceVehiclePosition.x,state.spaceVehiclePosition.y,state.spaceVehiclePosition.z);
-
-					// state.spaceVehiclePosition.x += 0.6 * dt; //Moving Horizontal
-
-						// state.rotateSpaceship += dt * ROTATION_SPEED; 
-						// if(state.rotateSpaceship > kPi_/2) {
-						// 	state.rotateSpaceship = kPi_/2; // Wrap around the rotation
-						// }
-						
-							// Prevent further rotation adjustments
-						// state.spaceVehiclePosition.y = 7.376896f;
-						// Mat44f horizontalRotationMatrix = make_rotation_z(-state.rotateSpaceship);
-						// model2worldVehicle = make_translation(state.spaceVehiclePosition) * horizontalRotationMatrix;
-						// projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
-
-					// }
-					
-					// printf("Rotation: %f\n",state.rotateSpaceship );
-				// }
+				state.fRotation = state.rotateSpaceship; // Capture the final rotation value
 			}
+
+			// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
+			Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
+			model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
+			projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 		}
-
-
+	}
 
 
 		// Draw scene
@@ -823,16 +788,20 @@ namespace
 				
 			}
 			
-			//Controls for animations
-			// switch (aKey) {
-			// 	case GLFW_KEY_F:
-			// 		state->thrust = (aAction != GLFW_RELEASE);
-			// 		break;
-			//  	case GLFW_KEY_R:
-			// 		state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-			// 		state->bezier = 0.0f;
-			// 		break;
-        	// }
+			// Controls for animations
+			switch (aKey) {
+				case GLFW_KEY_F:
+					state->thrust = true;
+					break;
+			 	case GLFW_KEY_R:
+					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+					state->thrust = false;
+					state->bezier = 0.0f;
+					state->rotateSpaceship = 0.0f;
+					state->stopped = false;
+					state->fRotation = 0.0f;
+					break;
+        	}
 
 			// Space toggles camera
 			if( GLFW_KEY_SPACE == aKey && GLFW_PRESS == aAction )
@@ -925,31 +894,6 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-				else if (aKey == GLFW_KEY_F && aAction == GLFW_PRESS) 
-				{
-					
-					state->thrust = true;
-						
-					
-					// else if (aAction == GLFW_RELEASE)
-					//  {
-						// state->thrust = false;
-					// }
-				}
-				else if (aKey == GLFW_KEY_R)
-				{
-					if(aAction == GLFW_PRESS)
-
-					{
-						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-						state->thrust = false;
-						
-						float height = 2.361225f; //before the spaceship starts to curve
-						constexpr float ROTATION_SPEED = 0.2f; // rotation speed
-						float counter_speed = 0.64f; //slowly moving
-						float start_speed = 0.0f;
-					}
-        }
 			}
 		}
 	}
