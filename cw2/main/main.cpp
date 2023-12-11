@@ -104,6 +104,7 @@ namespace
 
 int main() try
 {
+	
 	// Initialize GLFW
 	if( GLFW_TRUE != glfwInit() )
 	{
@@ -435,28 +436,23 @@ int main() try
 		}
 
 
-		// Camera control and update
+	//	Camera control and update
 
 		//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
 
    		// Update camera state based on the current mode
 		if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
 		{
-   			 if (!state.camControl.isFixedCameraInitialized) 
-			 {
-        		// Set an offset from the space vehicle
-				Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
+		// Set an offset from the space vehicle
+		Vec3f distance = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
 
-				// Update camera position based on the space vehicle position and the offset
-				state.camControl.position = state.spaceVehiclePosition + offset;
+		// Continuously update camera position based on the space vehicle position and the offset
+		state.camControl.position = state.spaceVehiclePosition + distance;
 
-				// Set the flag to true so this block won't be executed again
-				state.camControl.isFixedCameraInitialized = true;
-			}
+		// Update camera view to always look at the space vehicle
+		state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+		}
 
-			// Update camera view to always look at the space vehicle
-			state.camControl.cameraView = normalize(state.camControl.position - state.spaceVehiclePosition);
-		} 
 		else 
 		{
 			// Reset the flag if we switch to a different camera mode
@@ -531,6 +527,17 @@ int main() try
 			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
 		}
 	}
+	
+
+
+	if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
+	{
+		// Assuming you have an up vector defined as follows
+		Vec3f upVector = {0.0f, 1.0f, 0.0f};
+
+   	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+    	// createViewMatrix is a hypothetical function to create a view matrix.
+	}	 
 
 
 		// Update: compute matrices
