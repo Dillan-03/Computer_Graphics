@@ -63,6 +63,7 @@ namespace
 			bool control = false; // state for control key
 			bool speedBoostApplied = false; // speed up
 			bool slowDownApplied = false; // slow down 
+			bool fixedOngroundCam = false;
 			
 
 			float spaceVehicleThrust = 0.0f;  
@@ -79,7 +80,6 @@ namespace
 		} camControl;
 	};
 
-<<<<<<< HEAD
 	Vec3f curveBezier(Vec3f point0, Vec3f point1, Vec3f point2, Vec3f point3, float parameter) {
 		float inverseParameter = 1 - parameter;
 		float parameterSquared = parameter * parameter;
@@ -94,9 +94,31 @@ namespace
 
 		return p;
 	}
-=======
-	
->>>>>>> ed72ba0c3a51e4b35a9af8539887f7630e40bb12
+
+	Mat44f make_lookAt(const Vec3f &eye, const Vec3f &center, const Vec3f &up) {
+		Vec3f f = normalize(center - eye);  // forward vector
+		Vec3f u = normalize(up);            // up vector
+		Vec3f s = normalize(cross(f, u));   // right vector
+		u = cross(s, f);
+
+		Mat44f result;
+		result(0,0) = s.x;
+		result(1,0) = s.y;
+		result(2,0) = s.z;
+		result(0,1) = u.x;
+		result(1,1) = u.y;
+		result(2,1) = u.z;
+		result(0,2) = -f.x;
+		result(1,2) = -f.y;
+		result(2,2) = -f.z;
+		result(3,0) = -dot(s, eye);
+		result(3,1) = -dot(u, eye);
+		result(3,2) = dot(f, eye);
+		result(3,3) = 1.0f;
+		return result;
+	}
+
+
 	
 
 	void glfw_callback_error_( int, char const* );
@@ -166,7 +188,7 @@ int main() try
 	}
 
 	GLFWWindowDeleter windowDeleter{ window };
-
+	Mat44f world2camera;
 	// Set up event handling
 	// TODO: Additional event handling setup
 	State_ state{};
@@ -243,6 +265,8 @@ int main() try
 	// Animation state
 	auto last = Clock::now();
 	float angle = 0.f;
+
+	
 
 	//Loading in map
 	// ------------------
@@ -523,6 +547,7 @@ int main() try
 			state.spaceVehiclePosition = curveBezier(state.starting, state.control1, state.control2, state.ending, state.bezier);
 		}
 
+	
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
 		// Create cameraworld on map
@@ -551,6 +576,68 @@ int main() try
 		// ProjCameraWorld for spaceship
         Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
         Mat44f projCameraWorldPadVehicle = projection * world2camera * model2worldVehicle;
+
+				// Compute camera view matrix
+		if (state.camControl.fixedOngroundCam) {
+			// Follow mode - camera follows the spaceship
+			Vec3f cameraOffset = Vec3f{0.f, 1.f, 5.f};
+			Vec3f cameraPosition = state.spaceVehiclePosition - cameraOffset;
+			Vec3f cameraTarget = state.spaceVehiclePosition;
+			Vec3f upVector = Vec3f{0.f, 1.f, 0.f};
+			Mat44f viewMatrix = make_lookAt(cameraPosition, cameraTarget, upVector);
+			world2camera = viewMatrix;
+		} else {
+			// Regular camera control code
+			// This is where your existing camera control code will be
+			// Example:
+			Mat44f Rx = make_rotation_x(state.camControl.theta);
+			Mat44f Ry = make_rotation_y(state.camControl.phi);
+			Mat44f T = make_translation(-state.camControl.position);
+			world2camera = Rx * Ry * T;
+		}
+
+		// // Compute camera matrices for regular mode
+		// Mat44f Rx = make_rotation_x(state.camControl.theta);
+		// Mat44f Ry = make_rotation_y(state.camControl.phi);
+		// Mat44f T = make_translation(-state.camControl.position);
+
+		// // Projection matrix
+		// Mat44f projection = make_perspective_projection(
+		// 	60.f * 3.1415926f / 180.f,
+		// 	fbwidth/float(fbheight),
+		// 	0.1f, 100.0f);
+
+		// // Regular camera control code
+		// if (!state.camControl.fixedOngroundCam) {
+		// 	world2camera = Rx * Ry * T;
+		// }
+
+		// // Check if follow mode is active
+		// if (state.camControl.fixedOngroundCam) {
+		// 	// Follow mode - camera follows the spaceship
+		// 	Vec3f cameraOffset = Vec3f{0.f, 1.f, 5.f};
+		// 	Vec3f cameraPosition = state.spaceVehiclePosition - cameraOffset;
+		// 	Vec3f cameraTarget = state.spaceVehiclePosition;
+		// 	Vec3f upVector = Vec3f{0.f, 1.f, 0.f};
+		// 	Mat44f viewMatrix = make_lookAt(cameraPosition, cameraTarget, upVector);
+		// 	world2camera = viewMatrix;
+		// }
+
+		// // Compute matrices for scene objects
+		// Mat44f staticTerrain = make_rotation_y(0);
+		// Mat44f projCameraWorldTerrain = projection * world2camera * staticTerrain;
+
+		// // First Pad
+		// Mat44f model2worldPad = make_translation({0.0f, -0.97300, 20.0f});
+		// Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
+
+		// // Second Pad
+		// Mat44f model2worldPadsecond = make_translation({0.f, -0.97300, -2.5f});
+		// Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+
+		// // Space Vehicle
+		// Mat44f model2worldVehicle = make_translation(state.spaceVehiclePosition);
+		// Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
@@ -854,26 +941,14 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-				else if (aKey == GLFW_KEY_F) 
+				//to switch cameras
+				else if (aKey == GLFW_KEY_C) 
 				{
-					if (aAction == GLFW_PRESS) 
-					{
-						state->thrust = true;
-					} 
-					else if (aAction == GLFW_RELEASE)
-					 {
-						state->thrust = false;
+					if (aAction == GLFW_PRESS) {
+						state->camControl.fixedOngroundCam = !state->camControl.fixedOngroundCam;
 					}
 				}
-				else if (aKey == GLFW_KEY_R)
-				{
-					if(aAction == GLFW_PRESS)
 
-					{
-						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-						
-					}
-        }
 			}
 		}
 	}
