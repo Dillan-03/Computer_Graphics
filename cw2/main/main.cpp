@@ -43,11 +43,15 @@ namespace
 		Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
 		bool thrust = false;
 
+
+
 		//Bezier curve positions
 		Vec3f starting;
 		Vec3f control1;
 		Vec3f control2;
 		Vec3f ending;
+		
+		float rotateSpaceship = 0.0f;
 
 		float bezier = 0.0f;
 
@@ -79,24 +83,25 @@ namespace
 		} camControl;
 	};
 
-<<<<<<< HEAD
-	Vec3f curveBezier(Vec3f point0, Vec3f point1, Vec3f point2, Vec3f point3, float parameter) {
-		float inverseParameter = 1 - parameter;
-		float parameterSquared = parameter * parameter;
-		float uu = inverseParameter * inverseParameter;
-		float uuu = uu * inverseParameter;
-		float ttt = parameterSquared * parameter;
 
-		Vec3f p = uuu * point0; // First term
-		p += 3 * uu * parameter * point1; // Second term
-		p += 3 * inverseParameter * parameterSquared * point2; // Third term
-		p += ttt * point3; // Fourth term
+	//Using the logic from the following [https://www.jasondavies.com/animated-bezier/]
+	//Using the logic from the following [https://en.wikipedia.org/wiki/B%C3%A9zier_curve]
+	Vec3f curveBezier(Vec3f startingPoint, Vec3f factor, Vec3f endingPoint, float parameter) {
 
-		return p;
+		//Default parameter is 1
+		//0 <= Parameter <= 1
+		// Curve will start at point0, and where point2 is ending point where the spaceship is horizontal
+		float tParameter = 1 - parameter;
+
+		float tSquared = tParameter * tParameter; //To find each starting point as the parameter changes 
+		float middleParameter = parameter * parameter; //Used to find the ending point of the curve 
+
+		Vec3f curvePoint = tSquared * startingPoint; //Finds the starting point of the curve and how the curve will go from there
+		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is mre naturally curvy in the middle section
+		curvePoint += middleParameter * endingPoint; //Returns a vector which represents a specific point in the curve that the spaceship can follow through
+
+		return curvePoint;
 	}
-=======
-	
->>>>>>> ed72ba0c3a51e4b35a9af8539887f7630e40bb12
 	
 
 	void glfw_callback_error_( int, char const* );
@@ -135,7 +140,7 @@ int main() try
 	glfwWindowHint( GLFW_SRGB_CAPABLE, GLFW_TRUE );
 	glfwWindowHint( GLFW_DOUBLEBUFFER, GLFW_TRUE );
 
-	//glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
+	glfwWindowHint( GLFW_RESIZABLE, GLFW_TRUE );
 
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
@@ -170,10 +175,11 @@ int main() try
 	// Set up event handling
 	// TODO: Additional event handling setup
 	State_ state{};
-	state.starting = state.spaceVehiclePosition; // Starting position of the spaceship
-	state.control1 = Vec3f{state.starting.x, state.starting.y + 10.0f, state.starting.z}; // First control point, go up
-	state.control2 = Vec3f{state.starting.x + 20.0f, state.control1.y, state.starting.z - 5.0f}; // Second control point, begin to level out
-	state.ending = Vec3f{state.starting.x + 40.0f, state.starting.y, state.starting.z - 10.0f}; // Ending point, horizontal state
+
+	// Bezier curve points
+	state.starting = Vec3f{0.f, -0.969504f, -2.5f}; // Starting point of the curve 
+	state.control1 = Vec3f{0.f, 11.92000, -2.5f};  // Control point to bind the curve to that point so that the curve doesn't exceed the y-coordinate
+	state.ending = Vec3f{7.8f, 11.92000, -2.5f}; // Ending point when it reaches the horizontal state
 
 	state.bezier = 0.0f;
 	glfwSetWindowUserPointer( window, &state );
@@ -405,6 +411,12 @@ int main() try
 
 	OGL_CHECKPOINT_ALWAYS();
 
+
+	// Define the default cameraWorld here
+	//TODO: define and compute projCameraWorld matrix
+	
+
+
 	// Main loop
 	while( !glfwWindowShouldClose( window ) )
 	{
@@ -446,6 +458,34 @@ int main() try
 		angle += dt * kPi_ * 0.3f;
 		if( angle >= 2.f*kPi_ )
 			angle -= 2.f*kPi_;
+
+		// Update: compute matrices
+			// Create cameraworld on map
+		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
+		// rotation = 0 so that the terrain isn't rotating when the camera moves around
+		Mat44f staticTerrain = make_rotation_y(0);
+		Mat44f Rx = make_rotation_x( state.camControl.theta );
+		Mat44f Ry = make_rotation_y( state.camControl.phi );
+		Mat44f T = make_translation( -state.camControl.position );
+		Mat44f world2camera = Rx * Ry * T;
+		Mat44f projection = make_perspective_projection(
+			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
+			fbwidth/float(fbheight),
+			0.1f, 100.0f);
+		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
+		
+		// Create cameraworld on first pad
+		// Only need to update the model2world to move the pad around 
+		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
+		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
+
+		//Create cameraWorld on second pad 
+		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
+		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+
+		// ProjCameraWorld for spaceship
+        Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
+        Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 
 		// Update camera state
 		// PART ADDED FOR WASD  
@@ -508,49 +548,79 @@ int main() try
 			state.camControl.position.y -= speed * dt;
 		}
 
-		//F keyboard input, thrust on in the spaceship
-		// if (state.thrust) 
-		// {
-		// 	state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
-		// }
-		if (state.thrust) {
-			state.bezier += dt * 0.1f; // Adjust this rate to control the speed of the animation
-			if (state.bezier > 1.0f) {
-				state.bezier = 1.0f; // Cap the bezier at 1 to stay on the curve
-			}
 
-			// Use the Bezier curve to calculate the new position
-			state.spaceVehiclePosition = curveBezier(state.starting, state.control1, state.control2, state.ending, state.bezier);
+		//F keyboard input, thrust on in the spaceship
+
+		float height = 2.361225f; //before the spaceship starts to curve
+		constexpr float ROTATION_SPEED = 0.4f; // rotation speed
+		float counter_speed = 0.64f; //slowly moving
+		float start_speed = 0.0f;
+		
+		if (state.thrust) 
+		{
+
+			if (state.spaceVehiclePosition.y < height){
+				start_speed += speed * counter_speed;
+		
+				state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
+				// printf("%f -- %f -- %f\n",state.spaceVehiclePosition.x,state.spaceVehiclePosition.y,state.spaceVehiclePosition.z);
+
+			}
+			else{
+				
+				// Begin the bezier curve
+				state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
+				state.bezier = std::min(1.0f, state.bezier);
+								
+				if (state.bezier > 1.0f) {
+					state.bezier = 1.0f; // Cap the bezier at 1 to stay on the curve
+				}
+
+				// printf("Calling Bezier function\n");
+				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier); 
+
+				state.rotateSpaceship += dt * ROTATION_SPEED; 
+				if (state.rotateSpaceship >= kPi_ / 2.f) 
+				{
+					// Cap the rotation at 90 degrees
+					state.rotateSpaceship = kPi_ / 2.f;
+					Mat44f rotationMatrix = make_rotation_z(-state.rotateSpaceship);
+
+					printf("%f\n",state.spaceVehiclePosition.x);
+					// return 0;
+
+			
+				}
+				Mat44f rotationMatrix = make_rotation_z(-state.rotateSpaceship);
+
+				model2worldVehicle = make_translation(state.spaceVehiclePosition)* rotationMatrix ;
+				projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+					
+				// if (state.spaceVehiclePosition.x > {
+					// printf("x Coordinate: %f, Y Coordinate: %f, Z Coordinate: %f",state.spaceVehiclePosition.x,state.spaceVehiclePosition.y,state.spaceVehiclePosition.z);
+
+					// state.spaceVehiclePosition.x += 0.6 * dt; //Moving Horizontal
+
+						// state.rotateSpaceship += dt * ROTATION_SPEED; 
+						// if(state.rotateSpaceship > kPi_/2) {
+						// 	state.rotateSpaceship = kPi_/2; // Wrap around the rotation
+						// }
+						
+							// Prevent further rotation adjustments
+						// state.spaceVehiclePosition.y = 7.376896f;
+						// Mat44f horizontalRotationMatrix = make_rotation_z(-state.rotateSpaceship);
+						// model2worldVehicle = make_translation(state.spaceVehiclePosition) * horizontalRotationMatrix;
+						// projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+
+					// }
+					
+					// printf("Rotation: %f\n",state.rotateSpaceship );
+				// }
+			}
 		}
 
-		// Update: compute matrices
-		//TODO: define and compute projCameraWorld matrix
-		// Create cameraworld on map
-		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
-		// rotation = 0 so that the terrain isn't rotating when the camera moves around
-		Mat44f staticTerrain = make_rotation_y(0);
-		Mat44f Rx = make_rotation_x( state.camControl.theta );
-		Mat44f Ry = make_rotation_y( state.camControl.phi );
-		Mat44f T = make_translation( -state.camControl.position );
-		Mat44f world2camera = Rx * Ry * T;
-		Mat44f projection = make_perspective_projection(
-			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
-			fbwidth/float(fbheight),
-			0.1f, 100.0f);
-		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
 
-		// Create cameraworld on first pad
-		// Only need to update the model2world to move the pad around 
-		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
-		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
 
-		//Create cameraWorld on second pad 
-		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
-		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
-
-		// ProjCameraWorld for spaceship
-        Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
-        Mat44f projCameraWorldPadVehicle = projection * world2camera * model2worldVehicle;
 
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
@@ -644,7 +714,7 @@ int main() try
 
         glUniformMatrix4fv(
             0,
-            1, GL_TRUE, projCameraWorldPadVehicle.v);
+            1, GL_TRUE, projCameraWorldVehicle.v);
 
         GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
         glUniformMatrix3fv(
@@ -739,6 +809,7 @@ namespace
 					{
 						state->terrain->reload();
 						state->pad->reload();
+						state->spaceVehicle->reload();
 
 
 						std::fprintf( stderr, "Shaders reloaded and recompiled.\n" );
@@ -753,15 +824,15 @@ namespace
 			}
 			
 			//Controls for animations
-			switch (aKey) {
-				case GLFW_KEY_F:
-					state->thrust = (aAction != GLFW_RELEASE);
-					break;
-				case GLFW_KEY_R:
-					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-					state->bezier = 0.0f;
-					break;
-        	}
+			// switch (aKey) {
+			// 	case GLFW_KEY_F:
+			// 		state->thrust = (aAction != GLFW_RELEASE);
+			// 		break;
+			//  	case GLFW_KEY_R:
+			// 		state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+			// 		state->bezier = 0.0f;
+			// 		break;
+        	// }
 
 			// Space toggles camera
 			if( GLFW_KEY_SPACE == aKey && GLFW_PRESS == aAction )
@@ -854,16 +925,16 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-				else if (aKey == GLFW_KEY_F) 
+				else if (aKey == GLFW_KEY_F && aAction == GLFW_PRESS) 
 				{
-					if (aAction == GLFW_PRESS) 
-					{
-						state->thrust = true;
-					} 
-					else if (aAction == GLFW_RELEASE)
-					 {
-						state->thrust = false;
-					}
+					
+					state->thrust = true;
+						
+					
+					// else if (aAction == GLFW_RELEASE)
+					//  {
+						// state->thrust = false;
+					// }
 				}
 				else if (aKey == GLFW_KEY_R)
 				{
@@ -871,7 +942,12 @@ namespace
 
 					{
 						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+						state->thrust = false;
 						
+						float height = 2.361225f; //before the spaceship starts to curve
+						constexpr float ROTATION_SPEED = 0.2f; // rotation speed
+						float counter_speed = 0.64f; //slowly moving
+						float start_speed = 0.0f;
 					}
         }
 			}
@@ -916,4 +992,3 @@ namespace
 			glfwDestroyWindow( window );
 	}
 }
-
