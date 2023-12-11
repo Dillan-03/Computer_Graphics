@@ -35,16 +35,23 @@ namespace
 	constexpr float kMovementPerSecond_ = 5.f; // units per second
 	constexpr float kMouseSensitivity_ = 0.01f; // radians per pixel
 
+
+	// Define camera modes
+	enum CameraMode {
+		DEFAULT_CAMERA,
+		FIXED_DISTANCE_CAMERA,
+		GROUND_CAMERA
+	};
+
 	struct State_
 	{
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
-		ShaderProgram* spaceVehicle; //Shader program for space vehicle 
-		Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
-		bool thrust = false;
-
-
-
+		ShaderProgram* spaceVehicle; //Shader program for space vehicle  aaditya
+		 Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
+		 bool thrust = false;
+	    CameraMode cameraMode = DEFAULT_CAMERA; // Add camera mode variabl
+		
 		//Bezier curve positions
 		Vec3f starting;
 		Vec3f control1;
@@ -55,6 +62,7 @@ namespace
 		bool stopped = false; 
 
 		float bezier = 0.0f;
+
 
 		struct CamCtrl_
 		{
@@ -69,6 +77,7 @@ namespace
 			bool speedBoostApplied = false; // speed up
 			bool slowDownApplied = false; // slow down 
 			
+			bool isFixedCameraInitialized= false;
 
 			float spaceVehicleThrust = 0.0f;  
 
@@ -412,12 +421,6 @@ int main() try
 
 	OGL_CHECKPOINT_ALWAYS();
 
-
-	// Define the default cameraWorld here
-	//TODO: define and compute projCameraWorld matrix
-	
-
-
 	// Main loop
 	while( !glfwWindowShouldClose( window ) )
 	{
@@ -460,6 +463,47 @@ int main() try
 		if( angle >= 2.f*kPi_ )
 			angle -= 2.f*kPi_;
 
+
+		if (state.thrust) 
+		{
+			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
+		}
+
+		// Assuming you have an up vector defined as follows
+		Vec3f upVector = {0.0f, 1.0f, 0.0f};
+
+   	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+    	// createViewMatrix is a hypothetical function to create a view matrix.
+	
+
+
+
+	//	Camera control and update
+
+		//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
+
+   		// Update camera state based on the current mode
+				if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
+				{
+			// Set an offset from the space vehicle
+			Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
+
+			// Update camera position based on the space vehicle position and the offset
+			state.camControl.position = state.spaceVehiclePosition + offset;
+
+			// Update camera view to always look at the space vehicle
+			state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+
+			// Create the view matrix for the fixed distance camera
+			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+		}
+
+
+		else 
+		{
+			// Reset the flag if we switch to a different camera mode
+			state.camControl.isFixedCameraInitialized = false;
+
 		// Update: compute matrices
 			// Create cameraworld on map
 		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
@@ -488,8 +532,11 @@ int main() try
         Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
         Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 
+
 		// Update camera state
-		// PART ADDED FOR WASD  
+		// PART ADDED FOR WASD   // if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
+        //     return; // Disable mouse control for this mode
+        // }
 		// use the logic from the following [https://learnopengl.com/Getting-started/Camera]
 		// replacing glm for the phi and theta values
 		// Calculate camera cameraView vector
@@ -551,6 +598,15 @@ int main() try
 
 
 		//F keyboard input, thrust on in the spaceship
+
+		if (state.thrust) 
+		{
+			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
+		}
+				viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+
+	}
+
 
 		float height = 2.361225f; //before the spaceship starts to curve
 		constexpr float ROTATION_SPEED = 0.4f; // rotation speed
@@ -894,32 +950,84 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-			}
-		}
-	}
 
-	void glfw_callback_motion_( GLFWwindow* aWindow, double aX, double aY )
-	{
-		if( auto* state = static_cast<State_*>(glfwGetWindowUserPointer( aWindow )) )
-		{
-			if( state->camControl.cameraActive )
-			{
-				auto const dx = float(aX-state->camControl.lastX);
-				auto const dy = float(aY-state->camControl.lastY);
+				else if (aKey == GLFW_KEY_F) 
+				{
+					if (aAction == GLFW_PRESS) 
+					{
+						state->thrust = true;
+					} 
+					else if (aAction == GLFW_RELEASE)
+					 {
+						state->thrust = false;
+					}
+				}
+				else if (aKey == GLFW_KEY_R)
+				{
+					if(aAction == GLFW_PRESS)
 
-				state->camControl.phi += dx*kMouseSensitivity_;
+					{
+						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+						
+					}
+        		}
+				//hardcode the phi and theta values so that the spaceship look at the same angle each time :
 				
-				state->camControl.theta += dy*kMouseSensitivity_;
-				if( state->camControl.theta > kPi_/2.f )
-					state->camControl.theta = kPi_/2.f;
-				else if( state->camControl.theta < -kPi_/2.f )
-					state->camControl.theta = -kPi_/2.f;
-			}
+				const float fixedCameraPhi = 18.0299; // More to the left
+				const float fixedCameraTheta = 0.240; // More upward
 
-			state->camControl.lastX = float(aX);
-			state->camControl.lastY = float(aY);
+
+				// ... [in the part of your code where you handle key presses]
+				//C key keeps switching for each time
+				if (aKey == GLFW_KEY_C && aAction == GLFW_PRESS) 
+				{
+					if (state->cameraMode == DEFAULT_CAMERA) 
+					{
+					state->camControl.phi = fixedCameraPhi;
+					state->camControl.theta = fixedCameraTheta;
+					state->cameraMode = FIXED_DISTANCE_CAMERA;
+				
+					} 
+					else if(state->cameraMode == FIXED_DISTANCE_CAMERA) 
+					{
+
+						state->cameraMode = DEFAULT_CAMERA;
+					}
+				}
+			
+			}
 		}
 	}
+
+	void glfw_callback_motion_(GLFWwindow* aWindow, double aX, double aY) {
+    if (auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) 
+	{
+        // First, check if we are in the FIXED_DISTANCE_CAMERA mode
+        if (state->cameraMode == FIXED_DISTANCE_CAMERA) 
+		{
+            return; // Disable mouse control for this mode
+        }
+
+        // Now handle the mouse movement for other modes
+        if (state->camControl.cameraActive) {
+            auto const dx = float(aX - state->camControl.lastX);
+            auto const dy = float(aY - state->camControl.lastY);
+
+            state->camControl.phi += dx * kMouseSensitivity_;
+            state->camControl.theta += dy * kMouseSensitivity_;
+
+            if (state->camControl.theta > kPi_/2.f) {
+                state->camControl.theta = kPi_/2.f;
+            } else if (state->camControl.theta < -kPi_/2.f) {
+                state->camControl.theta = -kPi_/2.f;
+            }
+
+            state->camControl.lastX = float(aX);
+            state->camControl.lastY = float(aY);
+        }
+    }
+}
+
 
 }
 
