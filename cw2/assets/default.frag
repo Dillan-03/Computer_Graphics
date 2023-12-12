@@ -3,10 +3,6 @@ in vec3 v2fColor;
 in vec2 v2fTexCoord;
 in vec3 v2fNormal;
 
-
-
-
-//layout( location = 1 ) uniform vec3 uBaseColor;
 layout( location = 0 ) out vec3 oColor;
 
 

@@ -43,6 +43,8 @@ namespace
 		Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
 		bool thrust = false;
 
+		// Controls and Variables fo the particle system
+		bool particleSystemActivate = false;
 
 
 		//Bezier curve positions
@@ -792,6 +794,7 @@ namespace
 			switch (aKey) {
 				case GLFW_KEY_F:
 					state->thrust = true;
+					state->party
 					break;
 			 	case GLFW_KEY_R:
 					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
