@@ -154,4 +154,7 @@ Vec3f normalize( Vec3f aVec ) noexcept
 	return aVec / l;
 }
 
+
+
+
 #endif // VEC3_HPP_5710DADF_17EF_453C_A9C8_4A73DC66B1CD

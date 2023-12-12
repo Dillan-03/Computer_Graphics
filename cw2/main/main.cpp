@@ -7,6 +7,8 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
+#include <tuple>
 #include <iostream>
 
 #include "../support/error.hpp"
@@ -49,10 +51,25 @@ namespace
 		ShaderProgram* terrain;// Shader program for the map
 		ShaderProgram* pad; //Shader Program for the pad  
 		ShaderProgram* spaceVehicle; //Shader program for space vehicle 
-		 Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
+		Vec3f spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f}; // Initial hardcoded position
+
+	  
 		 bool thrust = false;
 	    CameraMode cameraMode = DEFAULT_CAMERA; // Add camera mode variable
 		
+
+		//Bezier curve positions
+		Vec3f starting;
+		Vec3f control1;
+		Vec3f control2;
+		Vec3f ending;
+		float fRotation = 0.0f;
+		float rotateSpaceship = 0.0f;
+		bool stopped = false; 
+
+		float bezier = 0.0f;
+
+
 		struct CamCtrl_
 		{
 
@@ -71,7 +88,8 @@ namespace
 			float spaceVehicleThrust = 0.0f;  
 
 			Vec3f position;
-			
+			Vec3f groundCameraPosition = Vec3f{ 9.0f, 4.5f, 3.0f }; // Fixed ground position
+
 			// phi is rotation around the y-axis 
 			// theta is rotation around the x-axis
 			float phi, theta;
@@ -82,9 +100,45 @@ namespace
 		} camControl;
 	};
 
+
+	//Using the logic from the following [https://www.jasondavies.com/animated-bezier/]
+	//Using the logic from the following [https://en.wikipedia.org/wiki/B%C3%A9zier_curve]
+	Vec3f curveBezier(Vec3f startingPoint, Vec3f factor, Vec3f endingPoint, float parameter) {
+
+		//Default parameter is 1
+		//0 <= Parameter <= 1
+		// Curve will start at point0, and where point2 is ending point where the spaceship is horizontal
+		float tParameter = 1 - parameter;
+
+		float tSquared = tParameter * tParameter; //To find each starting point as the parameter changes 
+		float middleParameter = parameter * parameter; //Used to find the ending point of the curve 
+
+		Vec3f curvePoint = tSquared * startingPoint; //Finds the starting point of the curve and how the curve will go from there
+		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is mre naturally curvy in the middle section
+		curvePoint += middleParameter * endingPoint; //Returns a vector which represents a specific point in the curve that the spaceship can follow through
+
+		return curvePoint;
+	}
 	
-	
-	
+float phi, theta;
+
+
+		std::tuple<float, float> calculatePhiTheta(const Vec3f& cameraPos, const Vec3f& vehiclePos) {
+			// Direction vector from camera to space vehicle
+			Vec3f direction = vehiclePos - cameraPos;
+
+			// Calculate phi (azimuthal angle)
+			float phi = atan2(direction.y, direction.x);
+
+			// Calculate the length of the projection in the xy-plane
+			float xyPlaneProjectionLength = sqrt(direction.x * direction.x + direction.y * direction.y);
+
+			// Calculate theta (polar angle)
+			float theta = atan2(xyPlaneProjectionLength, direction.z);
+
+			return std::make_tuple(phi, theta);
+		}
+
 	void glfw_callback_error_( int, char const* );
 
 	void glfw_callback_key_( GLFWwindow*, int, int, int, int );
@@ -159,6 +213,13 @@ int main() try
 	// TODO: Additional event handling setup
 	State_ state{};
 
+
+	// Bezier curve points
+	state.starting = Vec3f{0.f, -0.969504f, -2.5f}; // Starting point of the curve 
+	state.control1 = Vec3f{0.f, 11.92000, -2.5f};  // Control point to bind the curve to that point so that the curve doesn't exceed the y-coordinate
+	state.ending = Vec3f{7.8f, 11.92000, -2.5f}; // Ending point when it reaches the horizontal state
+
+	state.bezier = 0.0f;
 	glfwSetWindowUserPointer( window, &state );
 
 	glfwSetKeyCallback( window, &glfw_callback_key_ );
@@ -380,7 +441,21 @@ int main() try
 	GLuint vaoShape = create_novaoTexture(spaceShip); 
 	std::size_t shapevertexCounts = spaceShip.positions.size();
 
+	// Vec3f groundCameraPosition = {0.0f, 0.0f, 0.0f}; // Start with an initial position
 
+	// 	// Modify the position as needed and print itcc  cccccr
+	// 	for (int i = 0; i < 10; ++i) {
+	// 		groundCameraPosition.x = i; // Increment x-coordinate
+    //     groundCameraPosition.y = i / 2.0f; // Change y-coordinate
+    //     groundCameraPosition.z = i / 3.0f; // Change z-coordinate
+
+    //     // Output the current position
+    //     std::cout << "Ground Camera Position: "
+    //               << "X: " << groundCameraPosition.x
+    //               << ", Y: " << groundCameraPosition.y
+    //               << ", Z: " << groundCameraPosition.z << std::endl;
+
+	// }
 	// Other initialization & loading
 	OGL_CHECKPOINT_ALWAYS();
 	
@@ -431,11 +506,7 @@ int main() try
 		if( angle >= 2.f*kPi_ )
 			angle -= 2.f*kPi_;
 
-		if (state.thrust) 
-		{
-			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
-		}
-
+		
 		// Assuming you have an up vector defined as follows
 		Vec3f upVector = {0.0f, 1.0f, 0.0f};
 
@@ -443,18 +514,14 @@ int main() try
     	// createViewMatrix is a hypothetical function to create a view matrix.
 	
 
-
-
-	//	Camera control and update
-
-		//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
+	//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
 
    		// Update camera state based on the current mode
-				if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
-				{
+	 if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
+		{
 			// Set an offset from the space vehicle
 			Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
-
+			
 			// Update camera position based on the space vehicle position and the offset
 			state.camControl.position = state.spaceVehiclePosition + offset;
 
@@ -465,9 +532,68 @@ int main() try
 			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
 		}
 
+	
 
-		else 
-		{
+	 		//const Vec3f groundCameraPosition = Vec3f{ x, y, z }; // Fixed ground position
+
+			if (state.cameraMode == GROUND_CAMERA) 
+			{
+				// Assuming you have a function that calculates the direction vector
+				Vec3f groundCameraPosition = Vec3f{9.0f, 4.5f, 3.0f}; // Fixed ground position
+
+				// Calculate the camera direction to look at the spaceship
+				Vec3f cameraDirection = normalize(state.spaceVehiclePosition - groundCameraPosition);
+
+				// Calculate phi (azimuthal angle) based on the camera direction
+				float phi = atan2(cameraDirection.z, cameraDirection.x);
+
+				// Calculate theta (polar angle) based on the camera direction
+				float theta = atan2(sqrt(cameraDirection.x * cameraDirection.x + cameraDirection.y * cameraDirection.y), cameraDirection.z);
+
+				// Update ground camera orientation
+				state.camControl.phi = phi;
+				state.camControl.theta = theta;
+
+				// Set the camera's view direction to point at the spaceship
+				state.camControl.cameraView = cameraDirection;
+
+				// Create the view matrix for the ground camera
+				viewMatrix = createViewMatrix(groundCameraPosition, cameraDirection, upVector);
+			
+			}
+
+		// Update: compute matrices
+		//TODO: define and compute projCameraWorld matrix
+		// Create cameraworld on map
+		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
+		// rotation = 0 so that the terrain isn't rotating when the camera moves around
+		Mat44f staticTerrain = make_rotation_y(0);
+		Mat44f Rx = make_rotation_x( state.camControl.theta );
+		Mat44f Ry = make_rotation_y( state.camControl.phi );
+		Mat44f T = make_translation( -state.camControl.position );
+		Mat44f world2camera = Rx * Ry * T;
+		Mat44f projection = make_perspective_projection(
+			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
+			fbwidth/float(fbheight),
+			0.1f, 100.0f);
+		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
+
+		// Create cameraworld on first pad
+		// Only need to update the model2world to move the pad around 
+		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
+		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
+
+		//Create cameraWorld on second pad 
+		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
+		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+
+		// ProjCameraWorld for spaceship
+        Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
+        Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+	
+
+	if (state.cameraMode == DEFAULT_CAMERA) 
+	{
 			// Reset the flag if we switch to a different camera mode
 			state.camControl.isFixedCameraInitialized = false;
 
@@ -533,50 +659,57 @@ int main() try
 		if(state.camControl.down) {
 			state.camControl.position.y -= speed * dt;
 		}
-
-		//F keyboard input, thrust on in the spaceship
-		if (state.thrust) 
-		{
-			state.spaceVehiclePosition.y += speed * dt; // Adjust the value for the desired speed
-		}
-				viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+		
 
 	}
+		//F keyboard input, thrust on in the spaceship
+
+		float height = 2.361225f; //before the spaceship starts to curve
+		constexpr float ROTATION_SPEED = 0.4f; // rotation speed
+		float counter_speed = 0.64f; //slowly moving
+		float start_speed = 0.0f;
+
 	
 
+		if (state.thrust) 
+		{
+		if (state.spaceVehiclePosition.y < height) 
+		{
+			// Code to move spaceship vertically up to the height
+			start_speed += speed * counter_speed;
+			state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
+		} 
+		else 
+		{
+			// Begin the bezier curve
+			if (state.bezier < 0.8f) 
+			{ // Only animate until 80% of the curve
+				state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
+				state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
+				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
 
-		 
+				// Update rotation until the spaceship has stopped
+				state.rotateSpaceship += dt * ROTATION_SPEED;
+				if (state.rotateSpaceship >= kPi_ / 2.f) 
+				{
+					state.rotateSpaceship = kPi_ / 2.f;
+				}
+				state.fRotation = state.rotateSpaceship; // Capture the final rotation value
+			}
+
+			// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
+			Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
+			model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
+			projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+		}
+	}
 
 
-		// Update: compute matrices
-		//TODO: define and compute projCameraWorld matrix
-		// Create cameraworld on map
-		Mat33f normalMatrix = mat44_to_mat33(transpose(invert(kIdentity44f)));
-		// rotation = 0 so that the terrain isn't rotating when the camera moves around
-		Mat44f staticTerrain = make_rotation_y(0);
-		Mat44f Rx = make_rotation_x( state.camControl.theta );
-		Mat44f Ry = make_rotation_y( state.camControl.phi );
-		Mat44f T = make_translation( -state.camControl.position );
-		Mat44f world2camera = Rx * Ry * T;
-		Mat44f projection = make_perspective_projection(
-			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
-			fbwidth/float(fbheight),
-			0.1f, 100.0f);
-		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
 
-		// Create cameraworld on first pad
-		// Only need to update the model2world to move the pad around 
-		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
-		Mat44f projCameraWorldPad = projection * world2camera * model2worldPad;
 
-		//Create cameraWorld on second pad 
-		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
-		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+	//	Camera control and update
 
-		// ProjCameraWorld for spaceship
-        Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
-        Mat44f projCameraWorldPadVehicle = projection * world2camera * model2worldVehicle;
-
+		
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
 
@@ -669,7 +802,7 @@ int main() try
 
         glUniformMatrix4fv(
             0,
-            1, GL_TRUE, projCameraWorldPadVehicle.v);
+            1, GL_TRUE, projCameraWorldVehicle.v);
 
         GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
         glUniformMatrix3fv(
@@ -778,12 +911,18 @@ namespace
 			}
 			
 			//Controls for animations
+			
 			switch (aKey) {
 				case GLFW_KEY_F:
-					state->thrust = (aAction != GLFW_RELEASE);
+					state->thrust = true;
 					break;
-				case GLFW_KEY_R:
+			 	case GLFW_KEY_R:
 					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+					state->thrust = false;
+					state->bezier = 0.0f;
+					state->rotateSpaceship = 0.0f;
+					state->stopped = false;
+					state->fRotation = 0.0f;
 					break;
         	}
 
@@ -878,30 +1017,13 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-				else if (aKey == GLFW_KEY_F) 
-				{
-					if (aAction == GLFW_PRESS) 
-					{
-						state->thrust = true;
-					} 
-					else if (aAction == GLFW_RELEASE)
-					 {
-						state->thrust = false;
-					}
-				}
-				else if (aKey == GLFW_KEY_R)
-				{
-					if(aAction == GLFW_PRESS)
-
-					{
-						state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-						
-					}
-        		}
+				
+				
 				//hardcode the phi and theta values so that the spaceship look at the same angle each time :
 				
 				const float fixedCameraPhi = 18.0299; // More to the left
 				const float fixedCameraTheta = 0.240; // More upward
+
 
 
 				// ... [in the part of your code where you handle key presses]
@@ -915,29 +1037,32 @@ namespace
 					state->cameraMode = FIXED_DISTANCE_CAMERA;
 				
 					} 
-					else if(state->cameraMode == FIXED_DISTANCE_CAMERA) 
+					else if(state->cameraMode == FIXED_DISTANCE_CAMERA)  
 					{
-
-						state->cameraMode = DEFAULT_CAMERA;
+						state->camControl.groundCameraPosition = {0.0f , 0.3f,  0.0f};
+						state->cameraMode = GROUND_CAMERA;
 					}
+					else
+					state->cameraMode = DEFAULT_CAMERA;
 				}
-			
-
 			}
+
 		}
 	}
+
 
 	void glfw_callback_motion_(GLFWwindow* aWindow, double aX, double aY) {
     if (auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) 
 	{
         // First, check if we are in the FIXED_DISTANCE_CAMERA mode
-        if (state->cameraMode == FIXED_DISTANCE_CAMERA) 
+        if (state->cameraMode == FIXED_DISTANCE_CAMERA || state->cameraMode == GROUND_CAMERA) 
 		{
-            return; // Disable mouse control for this mode
+            return; // Disable mouse control for these modes
         }
 
         // Now handle the mouse movement for other modes
-        if (state->camControl.cameraActive) {
+        if (state->camControl.cameraActive) 
+		{
             auto const dx = float(aX - state->camControl.lastX);
             auto const dy = float(aY - state->camControl.lastY);
 
@@ -968,6 +1093,7 @@ namespace
 
 	GLFWWindowDeleter::~GLFWWindowDeleter()
 	{
+
 		if( window )
 			glfwDestroyWindow( window );
 	}
