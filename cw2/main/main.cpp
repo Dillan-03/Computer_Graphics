@@ -90,10 +90,6 @@ namespace
 		} camControl;
 	};
 
-	// FONScontext* fs = nullptr;
-	// int font;
-
-
 
 	//Using the logic from the following [https://www.jasondavies.com/animated-bezier/]
 	//Using the logic from the following [https://en.wikipedia.org/wiki/B%C3%A9zier_curve]
@@ -106,7 +102,7 @@ namespace
 
 		float tSquared = tParameter * tParameter; //To find each starting point as the parameter changes 
 		float middleParameter = parameter * parameter; //Used to find the ending point of the curve 
-
+    
 		Vec3f curvePoint = tSquared * startingPoint; //Finds the starting point of the curve and how the curve will go from there
 		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is mre naturally curvy in the middle section
 		curvePoint += middleParameter * endingPoint; //Returns a vector which represents a specific point in the curve that the spaceship can follow through
@@ -257,8 +253,8 @@ int main() try
 	state.camControl.radius = 10.f;
 
 	ShaderProgram pad( {
-		{ GL_VERTEX_SHADER, "assets/pad.vert" },
-		{ GL_FRAGMENT_SHADER, "assets/pad.frag" }
+		{ GL_VERTEX_SHADER, "assets/spaceVehicle.vert" },
+		{ GL_FRAGMENT_SHADER, "assets/spaceVehicle.frag" }
 	} );
 	state.pad = &pad;
 
@@ -585,7 +581,6 @@ int main() try
 		float start_speed = 0.0f;
 	
 
-
 		if (state.thrust) {
 			if (state.spaceVehiclePosition.y < height) {
 				// Code to move spaceship vertically up to the height
@@ -675,6 +670,7 @@ int main() try
 		glUniform3fv( 2, 1, &lightDir.x );
 		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
 		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		
 
 		// Drawing the second Pad
 		glUniformMatrix4fv(
@@ -686,9 +682,38 @@ int main() try
 			1, GL_TRUE, normalMatrix.v
 		);
 		//Lighting uniform values for second pad
-		glUniform3fv( 2, 1, &lightDir.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+		// glUniform3fv( 2, 1, &lightDir.x );
+		// glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+		// glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+		Vec3f light1Pad = Vec3f{ 0.f, 1.f, -1.f } ;
+		Vec3f light2Pad = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+		Vec3f light3Pad = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+		Vec3f lightColor1Pad = {1.0f, 0.95f, 0.9f};  
+		Vec3f lightColor2Pad = {1.0f, 0.95f, 0.9f};  
+		Vec3f lightColor3Pad = {1.0f, 0.95f, 0.9f}; 
+
+		Vec3f cameraPos1Pad = {0.0f, 0.0f, 10.0f};
+		Vec3f cameraPos2Pad  = {10.0f, -.0f, 0.0f};
+		Vec3f cameraPos3Pad  = {1.0f, 0.0f, -10.0f};
+
+		//Positional Light One
+		glUniform3fv( 2, 1, &light1Pad.x); //Light Position
+		glUniform3f( 3, lightColor1Pad.x,lightColor1Pad.y,lightColor1Pad.z  ); //Light Diffuse
+		glUniform3f( 4, cameraPos1Pad.x,cameraPos1Pad.y,cameraPos1Pad.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 5, 1, &light2Pad.x); //Light Position
+		glUniform3f( 6, lightColor2Pad.x,lightColor2Pad.y,lightColor2Pad.z  ); //Light Diffuse
+		glUniform3f( 7, cameraPos2Pad.x,cameraPos2Pad.y,cameraPos2Pad.z  ); //Light Diffuse
+
+		//Positional Light One
+		glUniform3fv( 8, 1, &light3Pad.x); //Light Position
+		glUniform3f( 9, lightColor3Pad.x,lightColor3Pad.y,lightColor3Pad.z  ); //Light Diffuse
+		glUniform3f( 10, cameraPos3Pad.x,cameraPos3Pad.y,cameraPos3Pad.z ); //Light Diffuse
+		glUniform3f( 11, 0.2, 0.19, 0.12); //Light Diffuse
+
 
 		//Draw a single triangle starting at index 0
 		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
@@ -718,16 +743,18 @@ int main() try
 
 		//Lighting uniform values for space vehicle
 		Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
-		Vec3f light2 = Vec3f{-1.0f, 1.0f, 10.0f}; // Light coming from the left and slightly above
+		Vec3f light2 = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
 		Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
 
-		Vec3f lightColor1 = {1.0f, 0.0f, 4.0f};  
-		Vec3f lightColor2 = {5.0f, 1.0f, 0.0f};  
-		Vec3f lightColor3 = {0.0f, 2.0f, 1.0f}; 
-
-		Vec3f cameraPos1 = {0.0f, -9.0f, 10.0f};
-		Vec3f cameraPos2  = {10.0f, 0.0f, 0.0f};
-		Vec3f cameraPos3  = {0.0f, 10.0f, -10.0f};
+		Vec3f lightColor1 = {1.0f, 2.95f, 0.9f}; // Soft white light
+  
+		Vec3f lightColor2 = {1.0f, 0.6f, 2.3f}; // Warm orange light
+ 
+		Vec3f lightColor3 = {2.3f, 0.5f, 1.0f}; // Cool blue light
+ 
+		Vec3f cameraPos1 = {0.0f, 0.0f, 5.0f};
+		Vec3f cameraPos2  = {5.0f, 0.0f, 0.0f};
+		Vec3f cameraPos3  = {0.0f, 5.0f, -5.0f};
 
 		//Positional Light One
 		glUniform3fv( 2, 1, &light1.x); //Light Position
@@ -743,6 +770,8 @@ int main() try
 		glUniform3fv( 8, 1, &light3.x); //Light Position
 		glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
 		glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
+		glUniform3f( 11, 0.05, 0.2, 0.1); //Light Diffuse
+
 
 		OGL_CHECKPOINT_DEBUG();
 

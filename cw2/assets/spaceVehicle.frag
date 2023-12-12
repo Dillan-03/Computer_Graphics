@@ -16,12 +16,12 @@ layout(location = 7) uniform vec3 uCameraPosTwo; // Camera position for specular
 layout( location = 8 ) uniform vec3 uLightPositionThree; //normalized (positional light)
 layout( location = 9 ) uniform vec3 uLightColourThree; //Diffuse illumination
 layout(location = 10 ) uniform vec3 uCameraPosThree; // Camera position for specular calculation
+layout(location = 11 ) uniform vec3 uSceneAmbient; // Camera position for scene ambient
 
 
+// Creating a ist to hold the corresponding light values
 
-// Creating a list to hold the corresponding light values
-
-// // // output the lighting on the space vehicle
+// output the lighting on the space vehicle
 layout( location = 0 ) out vec3 oColor;
 
 void main()
@@ -31,12 +31,11 @@ void main()
 
     vec3 normal = normalize(v2fNormal);
 
-    vec3 uSceneAmbient = vec3(0.1, 0.3, 0.1);
+    // vec3 uSceneAmbient 
 
-    float UShininess = 24.0; //how shiny the object will be
+    float UShininess = 32.0; //how shiny the object will be
 
     oColor = vec3(0.0); // Initialize oColor to prevent using uninitialized value
-
 
     // Process each light
     vec3 uLightPosition[3] = {uLightPositionOne, uLightPositionTwo, uLightPositionThree};
@@ -46,7 +45,7 @@ void main()
    // Method of Blinn-Phong is used from the following [https://learnopengl.com/Advanced-Lighting/Advanced-Lighting]
     for (int light = 0; light < 3; ++light) {
         // Ambient component
-        vec3 ambient = uSceneAmbient * v2fColor;
+        vec3 ambient = uSceneAmbient * 0.5 * v2fColor;
 
         // Diffuse component
         float diff = max(dot(normal, uLightPosition[light]), 0.0);
@@ -60,7 +59,7 @@ void main()
         vec3 halfwayDir = normalize(uLightPosition[light] + viewDir);
 
     
-        float spec = pow(max(dot(normal, halfwayDir), 0.0), 16.0);
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), UShininess);
         vec3 specular = uLightColour[light] * spec;
 
         // Distance attenuation
