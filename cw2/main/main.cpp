@@ -105,6 +105,10 @@ namespace
 
 		return curvePoint;
 	}
+
+	// void renderText(FONScontext* f, std::string t, float x, float y, float sizef, Vec4f col){
+
+	// }
 	
 
 	void glfw_callback_error_( int, char const* );
