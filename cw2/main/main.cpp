@@ -507,60 +507,13 @@ int main() try
 			angle -= 2.f*kPi_;
 
 		
-		// Assuming you have an up vector defined as follows
 		Vec3f upVector = {0.0f, 1.0f, 0.0f};
 
    	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
-    	// createViewMatrix is a hypothetical function to create a view matrix.
+    	
 	
 
-	//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
-
-   		// Update camera state based on the current mode
-	 if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
-		{
-			// Set an offset from the space vehicle
-			Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f}; // Adjust this as needed
-			
-			// Update camera position based on the space vehicle position and the offset
-			state.camControl.position = state.spaceVehiclePosition + offset;
-
-			// Update camera view to always look at the space vehicle
-			state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
-
-			// Create the view matrix for the fixed distance camera
-			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
-		}
-
 	
-
-	 		//const Vec3f groundCameraPosition = Vec3f{ x, y, z }; // Fixed ground position
-
-			if (state.cameraMode == GROUND_CAMERA) 
-			{
-				// Assuming you have a function that calculates the direction vector
-				Vec3f groundCameraPosition = Vec3f{9.0f, 4.5f, 3.0f}; // Fixed ground position
-
-				// Calculate the camera direction to look at the spaceship
-				Vec3f cameraDirection = normalize(state.spaceVehiclePosition - groundCameraPosition);
-
-				// Calculate phi (azimuthal angle) based on the camera direction
-				float phi = atan2(cameraDirection.z, cameraDirection.x);
-
-				// Calculate theta (polar angle) based on the camera direction
-				float theta = atan2(sqrt(cameraDirection.x * cameraDirection.x + cameraDirection.y * cameraDirection.y), cameraDirection.z);
-
-				// Update ground camera orientation
-				state.camControl.phi = phi;
-				state.camControl.theta = theta;
-
-				// Set the camera's view direction to point at the spaceship
-				state.camControl.cameraView = cameraDirection;
-
-				// Create the view matrix for the ground camera
-				viewMatrix = createViewMatrix(groundCameraPosition, cameraDirection, upVector);
-			
-			}
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
@@ -591,77 +544,7 @@ int main() try
         Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
         Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 	
-
-	if (state.cameraMode == DEFAULT_CAMERA) 
-	{
-			// Reset the flag if we switch to a different camera mode
-			state.camControl.isFixedCameraInitialized = false;
-
-		// Update camera state
-		// PART ADDED FOR WASD   // if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
-        //     return; // Disable mouse control for this mode
-        // }
-		// use the logic from the following [https://learnopengl.com/Getting-started/Camera]
-		// replacing glm for the phi and theta values
-		// Calculate camera cameraView vector
-
-		// Find the x coordinatees of the camera 
-		state.camControl.cameraView.x = cos(state.camControl.phi) * cos(state.camControl.theta);
-
-		// Find the y coordinatees of the camera 
-		state.camControl.cameraView.y = sin(state.camControl.theta);
-
-		// Find the z coordinatees of the camera 
-		state.camControl.cameraView.z = sin(state.camControl.phi) * cos(state.camControl.theta);
-
-		// We need to normalise so that the calculations are consistent 
-		state.camControl.cameraView = normalize(state.camControl.cameraView);
-		Vec3f camNormalised = normalize(cross({0.0f, 1.0f, 0.0f}, state.camControl.cameraView));
-
-		if (state.camControl.shift && state.camControl.speedBoostApplied)
-		{
-			speed = kMovementPerSecond_ * 2.0f; // Doubling the speed when shift is clicked
-		}
-		else if(state.camControl.control && state.camControl.slowDownApplied){
-			speed = kMovementPerSecond_ * 0.5f; // Halfing the speed when control is clicked
-		}
-		else
-		{
-			speed = kMovementPerSecond_;
-		}
-
-		//A Keyboard input, moving left
-		if(state.camControl.actionLeft) {			
-			state.camControl.position -= state.camControl.cameraView * speed * dt;
-		}
-
-		//D Keyboard input, moving right 
-		if(state.camControl.actionRight) {
-			state.camControl.position += state.camControl.cameraView * speed * dt;
-		}
-
-		// S Keyboard input, moving backwards
-		if(state.camControl.actionZoomOut) {			
-			state.camControl.position -= camNormalised * speed * dt;
-		}
-
-		// W Keyboard input Forward movement
-		if(state.camControl.actionZoomIn) {
-			state.camControl.position += camNormalised * speed * dt;
-		}
-
-		// E Keyboard input, moving up 
-		if(state.camControl.up) {
-			state.camControl.position.y += speed * dt;
-		}
-
-		// Q Keyboard input, moving down
-		if(state.camControl.down) {
-			state.camControl.position.y -= speed * dt;
-		}
 		
-
-	}
 		//F keyboard input, thrust on in the spaceship
 
 		float height = 2.361225f; //before the spaceship starts to curve
@@ -671,43 +554,152 @@ int main() try
 
 	
 
-		if (state.thrust) 
-		{
-		if (state.spaceVehiclePosition.y < height) 
-		{
-			// Code to move spaceship vertically up to the height
-			start_speed += speed * counter_speed;
-			state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
-		} 
-		else 
-		{
-			// Begin the bezier curve
-			if (state.bezier < 0.8f) 
-			{ // Only animate until 80% of the curve
-				state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
-				state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
-				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
+		if (state.thrust) {
+			if (state.spaceVehiclePosition.y < height) 
+			{
+				// Code to move spaceship vertically up to the height
+				start_speed += speed * counter_speed;
+				state.spaceVehiclePosition.y += start_speed * dt;
+			} 
+			else 
+			{
+				// Begin the bezier curve
+				if (state.bezier < 0.8f) 
+				{ // Only animate until 80% of the curve
+					state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
+					state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
+					state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
 
-				// Update rotation until the spaceship has stopped
-				state.rotateSpaceship += dt * ROTATION_SPEED;
-				if (state.rotateSpaceship >= kPi_ / 2.f) 
-				{
-					state.rotateSpaceship = kPi_ / 2.f;
+					// Update rotation until the spaceship has stopped
+					state.rotateSpaceship += dt * ROTATION_SPEED;
+					if (state.rotateSpaceship >= kPi_ / 2.f) 
+					{
+						state.rotateSpaceship = kPi_ / 2.f;
+					}
+					state.fRotation = state.rotateSpaceship; // Capture the final rotation value
 				}
-				state.fRotation = state.rotateSpaceship; // Capture the final rotation value
+
+				// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
+				Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
+				model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
+				projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+			}
+		}
+
+
+		if (state.cameraMode == DEFAULT_CAMERA) 
+		{
+			// Reset the flag if we switch to a different camera mode
+			state.camControl.isFixedCameraInitialized = false;
+
+			// Update camera state
+			// PART ADDED FOR WASD   // if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
+			//     return; // Disable mouse control for this mode
+			// }
+			// use the logic from the following [https://learnopengl.com/Getting-started/Camera]
+			// replacing glm for the phi and theta values
+			// Calculate camera cameraView vector
+
+			// Find the x coordinatees of the camera 
+			state.camControl.cameraView.x = cos(state.camControl.phi) * cos(state.camControl.theta);
+
+			// Find the y coordinatees of the camera 
+			state.camControl.cameraView.y = sin(state.camControl.theta);
+
+			// Find the z coordinatees of the camera 
+			state.camControl.cameraView.z = sin(state.camControl.phi) * cos(state.camControl.theta);
+
+			// We need to normalise so that the calculations are consistent 
+			state.camControl.cameraView = normalize(state.camControl.cameraView);
+			Vec3f camNormalised = normalize(cross({0.0f, 1.0f, 0.0f}, state.camControl.cameraView));
+
+			if (state.camControl.shift && state.camControl.speedBoostApplied)
+			{
+				speed = kMovementPerSecond_ * 2.0f; // Doubling the speed when shift is clicked
+			}
+			else if(state.camControl.control && state.camControl.slowDownApplied){
+				speed = kMovementPerSecond_ * 0.5f; // Halfing the speed when control is clicked
+			}
+			else
+			{
+				speed = kMovementPerSecond_;
 			}
 
-			// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
-			Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
-			model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
-			projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+			//A Keyboard input, moving left
+			if(state.camControl.actionLeft) {			
+				state.camControl.position -= state.camControl.cameraView * speed * dt;
+			}
+
+			//D Keyboard input, moving right 
+			if(state.camControl.actionRight) {
+				state.camControl.position += state.camControl.cameraView * speed * dt;
+			}
+
+			// S Keyboard input, moving backwards
+			if(state.camControl.actionZoomOut) {			
+				state.camControl.position -= camNormalised * speed * dt;
+			}
+
+			// W Keyboard input Forward movement
+			if(state.camControl.actionZoomIn) {
+				state.camControl.position += camNormalised * speed * dt;
+			}
+
+			// E Keyboard input, moving up 
+			if(state.camControl.up) {
+				state.camControl.position.y += speed * dt;
+			}
+
+			// Q Keyboard input, moving down
+			if(state.camControl.down) {
+				state.camControl.position.y -= speed * dt;
+			}
+			
 		}
-	}
+		//	Camera control and update
+
+			//The fixed camera that looks at the space vehicle from a distance and follows it in flight:
+
+			// Update camera state based on the current mode
+		if (state.cameraMode == FIXED_DISTANCE_CAMERA) 
+		{
+			// Set an offset from the space vehicle
+			Vec3f offset = Vec3f{6.0f, 3.0f, 5.0f};
+			
+			// Update camera position based on the space vehicle position and the offset
+			state.camControl.position = state.spaceVehiclePosition + offset;
+
+			// Update camera view to always look at the space vehicle
+			state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+
+			// Create the view matrix for the fixed distance camera
+			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+		}
 
 
+		if (state.cameraMode == GROUND_CAMERA) 
+		{
+			
+			state.camControl.position = Vec3f{9.f, 0.f, -3.f};
+
+			Vec3f cameraDirection = normalize(state.spaceVehiclePosition);
+			state.camControl.cameraView = cameraDirection;
+			// Update camera view to always look at the space vehicle
+			
+		
+			float phi = atan2(cameraDirection.z, cameraDirection.x);
+			float theta = asin(-cameraDirection.y);
 
 
-	//	Camera control and update
+			// Update ground camera orientation
+			state.camControl.phi = phi;
+			state.camControl.theta = theta;
+
+			// Set the camera's view direction to point at the spaceship
+			// Create the view matrix for the fixed distance camera
+			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+	
+		}
 
 		
 		// Draw scene
@@ -926,6 +918,30 @@ namespace
 					break;
         	}
 
+			//hardcode the phi and theta values so that the spaceship look at the same angle each time :
+			
+			const float fixedCameraPhi = 18.0299; // More to the left
+			const float fixedCameraTheta = 0.240; // More upward
+
+			//C key keeps switching for each time
+			if (aKey == GLFW_KEY_C && aAction == GLFW_PRESS) 
+			{
+				if (state->cameraMode == DEFAULT_CAMERA) 
+				{
+				state->camControl.phi = fixedCameraPhi;
+				state->camControl.theta = fixedCameraTheta;
+				state->cameraMode = FIXED_DISTANCE_CAMERA;
+			
+				} 
+				else if(state->cameraMode == FIXED_DISTANCE_CAMERA)  
+				{
+					state->camControl.groundCameraPosition = {0.0f , 0.3f,  0.0f};
+					state->cameraMode = GROUND_CAMERA;
+				}
+				else
+				state->cameraMode = DEFAULT_CAMERA;
+			}
+
 			// Space toggles camera
 			if( GLFW_KEY_SPACE == aKey && GLFW_PRESS == aAction )
 			{
@@ -1017,34 +1033,7 @@ namespace
 						state->camControl.control = false;
 					}
 				}
-				
-				
-				//hardcode the phi and theta values so that the spaceship look at the same angle each time :
-				
-				const float fixedCameraPhi = 18.0299; // More to the left
-				const float fixedCameraTheta = 0.240; // More upward
 
-
-
-				// ... [in the part of your code where you handle key presses]
-				//C key keeps switching for each time
-				if (aKey == GLFW_KEY_C && aAction == GLFW_PRESS) 
-				{
-					if (state->cameraMode == DEFAULT_CAMERA) 
-					{
-					state->camControl.phi = fixedCameraPhi;
-					state->camControl.theta = fixedCameraTheta;
-					state->cameraMode = FIXED_DISTANCE_CAMERA;
-				
-					} 
-					else if(state->cameraMode == FIXED_DISTANCE_CAMERA)  
-					{
-						state->camControl.groundCameraPosition = {0.0f , 0.3f,  0.0f};
-						state->cameraMode = GROUND_CAMERA;
-					}
-					else
-					state->cameraMode = DEFAULT_CAMERA;
-				}
 			}
 
 		}
@@ -1052,34 +1041,26 @@ namespace
 
 
 	void glfw_callback_motion_(GLFWwindow* aWindow, double aX, double aY) {
-    if (auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) 
-	{
-        // First, check if we are in the FIXED_DISTANCE_CAMERA mode
-        if (state->cameraMode == FIXED_DISTANCE_CAMERA || state->cameraMode == GROUND_CAMERA) 
-		{
-            return; // Disable mouse control for these modes
-        }
+		if(auto* state = static_cast<State_*>(glfwGetWindowUserPointer(aWindow))) {
+			// Check if camera is active and not in fixed mode or ground mode
+			if(state->camControl.cameraActive && (state->cameraMode != FIXED_DISTANCE_CAMERA) && (state->cameraMode != GROUND_CAMERA)) {
+				auto const dx = float(aX - state->camControl.lastX);
+				auto const dy = float(aY - state->camControl.lastY);
 
-        // Now handle the mouse movement for other modes
-        if (state->camControl.cameraActive) 
-		{
-            auto const dx = float(aX - state->camControl.lastX);
-            auto const dy = float(aY - state->camControl.lastY);
+				state->camControl.phi += dx * kMouseSensitivity_;
+				state->camControl.theta += dy * kMouseSensitivity_;
 
-            state->camControl.phi += dx * kMouseSensitivity_;
-            state->camControl.theta += dy * kMouseSensitivity_;
+				if(state->camControl.theta > kPi_ / 2.f)
+					state->camControl.theta = kPi_ / 2.f;
+				else if(state->camControl.theta < -kPi_ / 2.f)
+					state->camControl.theta = -kPi_ / 2.f;
+			}
 
-            if (state->camControl.theta > kPi_/2.f) {
-                state->camControl.theta = kPi_/2.f;
-            } else if (state->camControl.theta < -kPi_/2.f) {
-                state->camControl.theta = -kPi_/2.f;
-            }
+			state->camControl.lastX = float(aX);
+			state->camControl.lastY = float(aY);
+		}
+	}
 
-            state->camControl.lastX = float(aX);
-            state->camControl.lastY = float(aY);
-        }
-    }
-}
 
 
 }
