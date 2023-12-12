@@ -7,6 +7,8 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <stdio.h>					
+#include <string.h>	
 
 #include "../support/error.hpp"
 #include "../support/program.hpp"
@@ -25,6 +27,10 @@
 #include "cube.hpp"
 #include "simple_mesh.hpp"
 
+// #define FONTSTASH_IMPLEMENTATION	
+// #include "fontstash.h"
+// #define GLFONTSTASH_IMPLEMENTATION	
+// #include "glfontstash.h"
 
 namespace
 {
@@ -96,7 +102,7 @@ namespace
 
 		float tSquared = tParameter * tParameter; //To find each starting point as the parameter changes 
 		float middleParameter = parameter * parameter; //Used to find the ending point of the curve 
-
+    
 		Vec3f curvePoint = tSquared * startingPoint; //Finds the starting point of the curve and how the curve will go from there
 		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is mre naturally curvy in the middle section
 		curvePoint += middleParameter * endingPoint; //Returns a vector which represents a specific point in the curve that the spaceship can follow through
@@ -134,6 +140,13 @@ int main() try
 		int ecode = glfwGetError( &msg );
 		throw Error( "glfwInit() failed with '%s' (%d)", msg, ecode );
 	}
+
+	// fs = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
+	// font = fonsAddFont(fs, "mono", "assets/DroidSansMonoDotted.ttf");
+
+	// fonsSetFont(fs, font);
+	// fonsSetSize(fs, 24);
+	// fonsSetColor(fs, white);
 
 	
 	// Ensure that we call glfwTerminate() at the end of the program.
@@ -429,7 +442,13 @@ int main() try
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Only once at the beginning of the render loop
 
-		
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Render text
+		// float x = 100.0f;
+		// float y = 50.0f;
+		// fonsDrawText(fs, x, y, "Hello, World!", NULL);
+
 		// Check if window was resized.
 		float fbwidth, fbheight;
 		{
@@ -562,33 +581,32 @@ int main() try
 		float start_speed = 0.0f;
 	
 
+		if (state.thrust) {
+			if (state.spaceVehiclePosition.y < height) {
+				// Code to move spaceship vertically up to the height
+				start_speed += speed * counter_speed;
+				state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
+			} else {
+				// Begin the bezier curve
+				if (state.bezier < 0.8f) { // Only animate until 80% of the curve
+					state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
+					state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
+					state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
 
-	if (state.thrust) {
-		if (state.spaceVehiclePosition.y < height) {
-			// Code to move spaceship vertically up to the height
-			start_speed += speed * counter_speed;
-			state.spaceVehiclePosition.y += start_speed * dt; // Adjust the value for the desired speed
-		} else {
-			// Begin the bezier curve
-			if (state.bezier < 0.8f) { // Only animate until 80% of the curve
-				state.bezier += dt * 0.2; // Adjust this rate to control the speed of the animation
-				state.bezier = std::min(state.bezier, 0.8f); // Stop at 80%
-				state.spaceVehiclePosition = curveBezier(Vec3f{0.f, height, -2.5f}, state.control1, state.ending, state.bezier);
-
-				// Update rotation until the spaceship has stopped
-				state.rotateSpaceship += dt * ROTATION_SPEED;
-				if (state.rotateSpaceship >= kPi_ / 2.f) {
-					state.rotateSpaceship = kPi_ / 2.f;
+					// Update rotation until the spaceship has stopped
+					state.rotateSpaceship += dt * ROTATION_SPEED;
+					if (state.rotateSpaceship >= kPi_ / 2.f) {
+						state.rotateSpaceship = kPi_ / 2.f;
+					}
+					state.fRotation = state.rotateSpaceship; // Capture the final rotation value
 				}
-				state.fRotation = state.rotateSpaceship; // Capture the final rotation value
-			}
 
-			// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
-			Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
-			model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
-			projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+				// Apply the captured final rotation once the spaceship has reached 80% of the bezier curve
+				Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
+				model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
+				projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+			}
 		}
-	}
 
 
 		// Draw scene
@@ -768,6 +786,9 @@ int main() try
 	state.pad = nullptr;
 	state.terrain = nullptr;
 	state.spaceVehicle = nullptr;
+	// if (fs != nullptr){
+	// 	glfonsDelete(fs);
+	// }
 
 	
 
