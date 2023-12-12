@@ -639,12 +639,12 @@ int main() try
 				glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
 				glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
 
-				//Positional Light One
+				//Positional Light Two
 				glUniform3fv( 5, 1, &light2.x); //Light Position
 				glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
 				glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
 
-				//Positional Light One
+				//Positional Light Three
 				glUniform3fv( 8, 1, &light3.x); //Light Position
 				glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
 				glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
