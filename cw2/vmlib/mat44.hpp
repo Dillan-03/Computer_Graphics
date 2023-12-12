@@ -218,6 +218,28 @@ Mat44f make_perspective_projection( float aFovInRadians, float aAspect, float aN
 
     return result;
 }
+inline
+Mat44f createViewMatrix(const Vec3f& position, const Vec3f& target, const Vec3f& upVector) noexcept
+{
+    // Calculate the direction from the camera to the target (view direction)
+    Vec3f zAxis = normalize(position - target);
+
+    // Calculate the camera's right vector
+    Vec3f xAxis = normalize(cross(upVector, zAxis));
+
+    // Calculate the camera's up vector
+    Vec3f yAxis = cross(zAxis, xAxis);
+
+    // Create the view matrix
+    Mat44f viewMatrix = {
+        xAxis.x, yAxis.x, zAxis.x, 0,
+        xAxis.y, yAxis.y, zAxis.y, 0,
+        xAxis.z, yAxis.z, zAxis.z, 0,
+        -dot(xAxis, position), -dot(yAxis, position), -dot(zAxis, position), 1
+    };
+
+    return viewMatrix;
+}
 
 
 
