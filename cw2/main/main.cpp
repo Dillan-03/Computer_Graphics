@@ -38,6 +38,10 @@ namespace
 	constexpr float kMovementPerSecond_ = 5.f; // units per second
 	constexpr float kMouseSensitivity_ = 0.01f; // radians per pixel
 
+	//hardcode the phi and theta values so that the spaceship look at the same angle each time :
+	const float fixedCameraPhi = 18.0299; // More to the left
+	const float fixedCameraTheta = 0.240; // More upward
+
 
 	// Define camera modes
 	enum CameraMode {
@@ -57,6 +61,7 @@ namespace
 		 bool thrust = false;
 	    CameraMode cameraMode = DEFAULT_CAMERA; // Add camera mode variable
 		
+		bool splitScreen = false;
 
 		//Bezier curve positions
 		Vec3f starting;
@@ -68,7 +73,6 @@ namespace
 		bool stopped = false; 
 
 		float bezier = 0.0f;
-
 
 		struct CamCtrl_
 		{
@@ -96,10 +100,15 @@ namespace
 			float radius;
 			float lastX, lastY;
 
+			// TO decide which camera is being used
+			bool LeftCamera = false;
+			bool RightCamera = false;
+
 			Vec3f cameraView; // Camera's front view so that the controls are relative to the way we're looking
-		} camControl;
+		} camControl, camControlRight;
 	};
 
+	
 
 	//Using the logic from the following [https://www.jasondavies.com/animated-bezier/]
 	//Using the logic from the following [https://en.wikipedia.org/wiki/B%C3%A9zier_curve]
@@ -120,25 +129,6 @@ namespace
 		return curvePoint;
 	}
 	
-float phi, theta;
-
-
-		std::tuple<float, float> calculatePhiTheta(const Vec3f& cameraPos, const Vec3f& vehiclePos) {
-			// Direction vector from camera to space vehicle
-			Vec3f direction = vehiclePos - cameraPos;
-
-			// Calculate phi (azimuthal angle)
-			float phi = atan2(direction.y, direction.x);
-
-			// Calculate the length of the projection in the xy-plane
-			float xyPlaneProjectionLength = sqrt(direction.x * direction.x + direction.y * direction.y);
-
-			// Calculate theta (polar angle)
-			float theta = atan2(xyPlaneProjectionLength, direction.z);
-
-			return std::make_tuple(phi, theta);
-		}
-
 	void glfw_callback_error_( int, char const* );
 
 	void glfw_callback_key_( GLFWwindow*, int, int, int, int );
@@ -212,6 +202,7 @@ int main() try
 	// Set up event handling
 	// TODO: Additional event handling setup
 	State_ state{};
+	
 
 
 	// Bezier curve points
@@ -510,10 +501,7 @@ int main() try
 		Vec3f upVector = {0.0f, 1.0f, 0.0f};
 
    	 	Mat44f viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
-    	
-	
-
-	
+    	Mat44f viewMatrixRight = createViewMatrix(state.camControlRight.position, state.camControlRight.cameraView, upVector);
 
 		// Update: compute matrices
 		//TODO: define and compute projCameraWorld matrix
@@ -531,6 +519,17 @@ int main() try
 			0.1f, 100.0f);
 		Mat44f projCameraWorld = projection * world2camera * staticTerrain;
 
+		//to handle the right side of the screen when splitted
+		Mat44f RxRight = make_rotation_x( state.camControlRight.theta );
+		Mat44f RyRight = make_rotation_y( state.camControlRight.phi );
+		Mat44f TRight = make_translation( -state.camControlRight.position );
+		Mat44f world2cameraRight = RxRight * RyRight * TRight;
+		Mat44f projectionRight = make_perspective_projection(
+			60.f * 3.1415926f / 180.f, // Yes, a proper π would be useful. ( C++20: mathematical constants) 2
+			fbwidth/float(fbheight),
+			0.1f, 100.0f);
+		Mat44f projCameraWorldRight = projectionRight * world2cameraRight * staticTerrain;
+
 		// Create cameraworld on first pad
 		// Only need to update the model2world to move the pad around 
 		Mat44f model2worldPad = make_translation( {0.0f, -0.97300, 20.0f} );
@@ -538,13 +537,27 @@ int main() try
 
 		//Create cameraWorld on second pad 
 		Mat44f model2worldPadsecond = make_translation( {0.f, -0.97300, -2.5f} );
-		Mat44f projCameraWorldPadsecond = projection * world2camera * model2worldPadsecond;
+		Mat44f projCameraWorldPadsecond = projection * world2camera* model2worldPadsecond;
 
 		// ProjCameraWorld for spaceship
         Mat44f model2worldVehicle = make_translation( {state.spaceVehiclePosition} );
         Mat44f projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
 	
-		
+		///Right Screen
+		// Only need to update the model2world to move the pad around 
+		Mat44f model2worldPadRight = make_translation( {0.0f, -0.97300, 20.0f} );
+		Mat44f projCameraWorldPadRight = projectionRight * world2cameraRight * model2worldPadRight;
+
+		//Create cameraWorld on second pad 
+		Mat44f model2worldPadsecondRight = make_translation( {0.f, -0.97300, -2.5f} );
+		Mat44f projCameraWorldPadsecondRight = projectionRight * world2cameraRight * model2worldPadsecondRight;
+
+		// ProjCameraWorld for spaceship
+        Mat44f model2worldVehicleRight = make_translation( {state.spaceVehiclePosition} );
+        Mat44f projCameraWorldVehicleRight = projectionRight * world2cameraRight * model2worldVehicleRight;
+	
+
+
 		//F keyboard input, thrust on in the spaceship
 
 		float height = 2.361225f; //before the spaceship starts to curve
@@ -583,6 +596,10 @@ int main() try
 				Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
 				model2worldVehicle = make_translation(state.spaceVehiclePosition) * rotationMatrix;
 				projCameraWorldVehicle = projection * world2camera * model2worldVehicle;
+
+				// Mat44f rotationMatrix = make_rotation_z(-state.fRotation);
+				model2worldVehicleRight = make_translation(state.spaceVehiclePosition) * rotationMatrix;
+				projCameraWorldVehicleRight = projection * world2camera * model2worldVehicle;
 			}
 		}
 
@@ -591,6 +608,8 @@ int main() try
 		{
 			// Reset the flag if we switch to a different camera mode
 			state.camControl.isFixedCameraInitialized = false;
+			// state.camControlRight.isFixedCameraInitialized = false;
+
 
 			// Update camera state
 			// PART ADDED FOR WASD   // if (state->cameraMode == FIXED_DISTANCE_CAMERA) {
@@ -672,12 +691,20 @@ int main() try
 			
 			// Update camera position based on the space vehicle position and the offset
 			state.camControl.position = state.spaceVehiclePosition + offset;
+			state.camControlRight.position = state.spaceVehiclePosition + offset;
+// 
 
 			// Update camera view to always look at the space vehicle
 			state.camControl.cameraView = normalize(state.spaceVehiclePosition - state.camControl.position);
+			state.camControlRight.position = state.spaceVehiclePosition + offset;
+
 
 			// Create the view matrix for the fixed distance camera
 			viewMatrix = createViewMatrix(state.camControl.position, state.camControl.cameraView, upVector);
+			viewMatrixRight = createViewMatrix(state.camControlRight.position, state.camControlRight.cameraView, upVector);
+
+
+
 		}
 
 
@@ -709,185 +736,517 @@ int main() try
 		// Draw scene
 		OGL_CHECKPOINT_DEBUG();
 
-		// Clear color buffer to specified clear color (glClearColor())
-		glClear(GL_COLOR_BUFFER_BIT);
+		//check if splitscreen has been activated
+		if (state.splitScreen == true){
 
-		
-		OGL_CHECKPOINT_DEBUG();
+			// Left Side of the Screen
 
-		//Source input as defined in our VAO
-		//Drawing the map
-		// --------------
-		//We want to draw with our scene
-		glUseProgram(state.terrain->programId());
-
-		glBindVertexArray(vao);	
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorld.v);
-		GLuint loc = glGetUniformLocation(state.terrain->programId(), "uNormalMatrix");
-		glUniformMatrix3fv(
-			loc, // make sure this matches the location = N in the vertex shader!
-			1, GL_TRUE, normalMatrix.v
-		);
-
-		// Textures to match to the map texture file 
-		glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureMap);
-
-		//Lighting uniform values 
-		Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
-		glUniform3fv( 2, 1, &lightDir.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
-
-		glDrawArrays( GL_TRIANGLES, 0, VertexCount);
-
-		//Reset state
-		glBindVertexArray(0);
-		glUseProgram(0);
-		
-		//Drawing the Pad
-		// -------------
-		glUseProgram(state.pad->programId());
-
-		glBindVertexArray(vaoPad);
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorldPad.v);
+			glViewport(0, 0, fbwidth / 2, fbheight);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
-		GLuint locPad = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
-		glUniformMatrix3fv(
-			locPad, // make sure this matches the location = N in the vertex shader!
-			1, GL_TRUE, normalMatrix.v
-		);
-		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
-		//Lighting uniform values for first pad
-		glUniform3fv( 2, 1, &lightDir.x );
-		glUniform3f( 3, 0.9f, 0.9f, 0.6f );
-		glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+			// drawScene(state, projCameraWorld, projCameraWorldPad, projCameraWorldPadsecond, projCameraWorldVehicle);
+			OGL_CHECKPOINT_DEBUG();
+			//Source input as defined in our VAO
+			//Drawing the map
+			// --------------
+			//We want to draw with our scene
+			glUseProgram(state.terrain->programId());
 
-		// Drawing the second Pad
-		glUniformMatrix4fv(
-			0,
-			1, GL_TRUE, projCameraWorldPadsecond.v);
-			GLuint locPadSecond = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
-		glUniformMatrix3fv(
-			locPadSecond, // make sure this matches the location = N in the vertex shader!
-			1, GL_TRUE, normalMatrix.v
-		);
+			glBindVertexArray(vao);	
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorld.v);
+			GLuint loc = glGetUniformLocation(state.terrain->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				loc, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+
+			// Textures to match to the map texture file 
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureMap);
+
+			//Lighting uniform values 
+			Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+			glUniform3fv( 2, 1, &lightDir.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+			glDrawArrays( GL_TRIANGLES, 0, VertexCount);
+
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
+			
+			//Drawing the Pad
+			// -------------
+			glUseProgram(state.pad->programId());
+
+			glBindVertexArray(vaoPad);
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPad.v);
+				
+			GLuint locPad = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPad, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+			//Lighting uniform values for first pad
+			glUniform3fv( 2, 1, &lightDir.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+			// Drawing the second Pad
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPadsecond.v);
+				GLuint locPadSecond = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPadSecond, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			
+			//Lighting uniform values for second pad
+			Vec3f light1Pad = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2Pad = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3Pad = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+			Vec3f lightColor1Pad = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor2Pad = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor3Pad = {1.0f, 0.95f, 0.9f}; 
+
+			Vec3f cameraPos1Pad = {0.0f, 0.0f, 10.0f};
+			Vec3f cameraPos2Pad  = {10.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3Pad  = {1.0f, 0.0f, -10.0f};
+
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1Pad.x); //Light Position
+			glUniform3f( 3, lightColor1Pad.x,lightColor1Pad.y,lightColor1Pad.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1Pad.x,cameraPos1Pad.y,cameraPos1Pad.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2Pad.x); //Light Position
+			glUniform3f( 6, lightColor2Pad.x,lightColor2Pad.y,lightColor2Pad.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2Pad.x,cameraPos2Pad.y,cameraPos2Pad.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3Pad.x); //Light Position
+			glUniform3f( 9, lightColor3Pad.x,lightColor3Pad.y,lightColor3Pad.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3Pad.x,cameraPos3Pad.y,cameraPos3Pad.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.12); //Light Diffuse
+
+			//Draw a single triangle starting at index 0
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
+
+			
+			//Drawing the 3D shapes
+			// -------------
+			glUseProgram(state.spaceVehicle->programId());
+
+			glBindVertexArray(vaoShape);
+
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldVehicle.v);
+
+			GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				veh, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+
+			glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+
+			//Lighting uniform values for space vehicle
+			Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2 = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+			Vec3f lightColor1 = {0.0f, 3.0f, 0.0f};  
+			Vec3f lightColor2 = {3.0f, 0.0f, 0.0f};  
+			Vec3f lightColor3 = {0.0f, 0.0f, 3.0f}; 
+
+			Vec3f cameraPos1 = {0.0f, -1.0f, 1.0f};
+			Vec3f cameraPos2  = {1.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3  = {0.0f, 1.0f, -1.0f};
+
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1.x); //Light Position
+			glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2.x); //Light Position
+			glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3.x); //Light Position
+			glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.18); //Light Diffuse
+
+			OGL_CHECKPOINT_DEBUG();
+
+			// Display results
+			glBindVertexArray(0);
+			glUseProgram(0);
+
+			
+			// Right Side of the Screen
+
+			glViewport(fbwidth / 2, 0, fbwidth / 2, fbheight);
+			
+
+			// drawScene(state, projCameraWorld, projCameraWorldPad, projCameraWorldPadsecond, projCameraWorldVehicle);
+			OGL_CHECKPOINT_DEBUG();
+			//Source input as defined in our VAO
+			//Drawing the map
+			// --------------
+			//We want to draw with our scene
+			glUseProgram(state.terrain->programId());
+
+			glBindVertexArray(vao);	
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldRight.v);
+			GLuint locRight = glGetUniformLocation(state.terrain->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locRight, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+
+			// Textures to match to the map texture file 
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureMap);
+
+			//Lighting uniform values 
+			Vec3f lightDirRight = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+			glUniform3fv( 2, 1, &lightDirRight.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+			glDrawArrays( GL_TRIANGLES, 0, VertexCount);
+
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
+			
+			//Drawing the Pad
+			// -------------
+			glUseProgram(state.pad->programId());
+
+			glBindVertexArray(vaoPad);
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPadRight.v);
+				
+			GLuint locPadRight = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPadRight, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+			//Lighting uniform values for first pad
+			glUniform3fv( 2, 1, &lightDirRight.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
+
+			// Drawing the second Pad
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPadsecondRight.v);
+				GLuint locPadSecondRight = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPadSecondRight, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			
+			//Lighting uniform values for second pad
+			Vec3f light1PadRight = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2PadRight = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3PadRight = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+			Vec3f lightColor1PadRight = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor2PadRight = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor3PadRight = {1.0f, 0.95f, 0.9f}; 
+
+			Vec3f cameraPos1PadRight = {0.0f, 0.0f, 10.0f};
+			Vec3f cameraPos2PadRight  = {10.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3PadRight  = {1.0f, 0.0f, -10.0f};
+
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1PadRight.x); //Light Position
+			glUniform3f( 3, lightColor1PadRight.x,lightColor1PadRight.y,lightColor1PadRight.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1PadRight.x,cameraPos1PadRight.y,cameraPos1PadRight.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2PadRight.x); //Light Position
+			glUniform3f( 6, lightColor2PadRight.x,lightColor2PadRight.y,lightColor2PadRight.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2PadRight.x,cameraPos2PadRight.y,cameraPos2PadRight.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3PadRight.x); //Light Position
+			glUniform3f( 9, lightColor3PadRight.x,lightColor3PadRight.y,lightColor3PadRight.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3PadRight.x,cameraPos3PadRight.y,cameraPos3PadRight.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.12); //Light Diffuse
+
+			//Draw a single triangle starting at index 0
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
+
+			
+			//Drawing the 3D shapes
+			// -------------
+			glUseProgram(state.spaceVehicle->programId());
+
+			glBindVertexArray(vaoShape);
+
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldVehicleRight.v);
+
+			GLuint vehRight = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				vehRight, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+
+			glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+
+			//Lighting uniform values for space vehicle
+			Vec3f light1Right = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2Right = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3Right = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+			Vec3f lightColor1Right = {0.0f, 3.0f, 0.0f};  
+			Vec3f lightColor2Right = {3.0f, 0.0f, 0.0f};  
+			Vec3f lightColor3Right = {0.0f, 0.0f, 3.0f}; 
+
+			Vec3f cameraPos1Right = {0.0f, -1.0f, 1.0f};
+			Vec3f cameraPos2Right = {1.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3Right  = {0.0f, 1.0f, -1.0f};
+
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1Right.x); //Light Position
+			glUniform3f( 3, lightColor1Right.x,lightColor1Right.y,lightColor1Right.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1Right.x,cameraPos1Right.y,cameraPos1Right.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2Right.x); //Light Position
+			glUniform3f( 6, lightColor2Right.x,lightColor2Right.y,lightColor2Right.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2Right.x,cameraPos2Right.y,cameraPos2Right.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3Right.x); //Light Position
+			glUniform3f( 9, lightColor3Right.x,lightColor3Right.y,lightColor3Right.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3Right.x,cameraPos3Right.y,cameraPos3Right.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.18); //Light Diffuse
+
+			OGL_CHECKPOINT_DEBUG();
+			// glfwSwapBuffers(window);
+
+			// Display results
+			glBindVertexArray(0);
+			glUseProgram(0);
+			
 		
-		//Lighting uniform values for second pad
-		Vec3f light1Pad = Vec3f{ 0.f, 1.f, -1.f } ;
-		Vec3f light2Pad = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
-		Vec3f light3Pad = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+		}else
+		{
+			OGL_CHECKPOINT_DEBUG();
 
-		Vec3f lightColor1Pad = {1.0f, 0.95f, 0.9f};  
-		Vec3f lightColor2Pad = {1.0f, 0.95f, 0.9f};  
-		Vec3f lightColor3Pad = {1.0f, 0.95f, 0.9f}; 
+			//Source input as defined in our VAO
+			//Drawing the map
+			// --------------
+			//We want to draw with our scene
+			glUseProgram(state.terrain->programId());
 
-		Vec3f cameraPos1Pad = {0.0f, 0.0f, 10.0f};
-		Vec3f cameraPos2Pad  = {10.0f, 0.0f, 0.0f};
-		Vec3f cameraPos3Pad  = {1.0f, 0.0f, -10.0f};
+			glBindVertexArray(vao);	
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorld.v);
+			GLuint loc = glGetUniformLocation(state.terrain->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				loc, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
 
-		//Positional Light One
-		glUniform3fv( 2, 1, &light1Pad.x); //Light Position
-		glUniform3f( 3, lightColor1Pad.x,lightColor1Pad.y,lightColor1Pad.z  ); //Light Diffuse
-		glUniform3f( 4, cameraPos1Pad.x,cameraPos1Pad.y,cameraPos1Pad.z  ); //Light Diffuse
+			// Textures to match to the map texture file 
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureMap);
 
-		//Positional Light One
-		glUniform3fv( 5, 1, &light2Pad.x); //Light Position
-		glUniform3f( 6, lightColor2Pad.x,lightColor2Pad.y,lightColor2Pad.z  ); //Light Diffuse
-		glUniform3f( 7, cameraPos2Pad.x,cameraPos2Pad.y,cameraPos2Pad.z  ); //Light Diffuse
+			//Lighting uniform values 
+			Vec3f lightDir = normalize( Vec3f{ 0.f, 1.f, -1.f } );
+			glUniform3fv( 2, 1, &lightDir.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
-		//Positional Light One
-		glUniform3fv( 8, 1, &light3Pad.x); //Light Position
-		glUniform3f( 9, lightColor3Pad.x,lightColor3Pad.y,lightColor3Pad.z  ); //Light Diffuse
-		glUniform3f( 10, cameraPos3Pad.x,cameraPos3Pad.y,cameraPos3Pad.z ); //Light Diffuse
-		glUniform3f( 11, 0.2, 0.19, 0.12); //Light Diffuse
+			glDrawArrays( GL_TRIANGLES, 0, VertexCount);
 
-		//Draw a single triangle starting at index 0
-		glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
+			
+			//Drawing the Pad
+			// -------------
+			glUseProgram(state.pad->programId());
 
-		//Reset state
-		glBindVertexArray(0);
-		glUseProgram(0);
+			glBindVertexArray(vaoPad);
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPad.v);
+				
+			GLuint locPad = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPad, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
-		
-		//Drawing the 3D shapes
-		// -------------
-        glUseProgram(state.spaceVehicle->programId());
+			//Lighting uniform values for first pad
+			glUniform3fv( 2, 1, &lightDir.x );
+			glUniform3f( 3, 0.9f, 0.9f, 0.6f );
+			glUniform3f( 4, 0.05f, 0.05f, 0.05f );
 
-        glBindVertexArray(vaoShape);
+			// Drawing the second Pad
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldPadsecond.v);
+				GLuint locPadSecond = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				locPadSecond, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+			
+			//Lighting uniform values for second pad
+			Vec3f light1Pad = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2Pad = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3Pad = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
 
-        glUniformMatrix4fv(
-            0,
-            1, GL_TRUE, projCameraWorldVehicle.v);
+			Vec3f lightColor1Pad = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor2Pad = {1.0f, 0.95f, 0.9f};  
+			Vec3f lightColor3Pad = {1.0f, 0.95f, 0.9f}; 
 
-        GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
-        glUniformMatrix3fv(
-            veh, // make sure this matches the location = N in the vertex shader!
-            1, GL_TRUE, normalMatrix.v
-        );
+			Vec3f cameraPos1Pad = {0.0f, 0.0f, 10.0f};
+			Vec3f cameraPos2Pad  = {10.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3Pad  = {1.0f, 0.0f, -10.0f};
 
-		glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1Pad.x); //Light Position
+			glUniform3f( 3, lightColor1Pad.x,lightColor1Pad.y,lightColor1Pad.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1Pad.x,cameraPos1Pad.y,cameraPos1Pad.z  ); //Light Diffuse
 
-		//Lighting uniform values for space vehicle
-		Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
-		Vec3f light2 = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
-		Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2Pad.x); //Light Position
+			glUniform3f( 6, lightColor2Pad.x,lightColor2Pad.y,lightColor2Pad.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2Pad.x,cameraPos2Pad.y,cameraPos2Pad.z  ); //Light Diffuse
 
-		Vec3f lightColor1 = {0.0f, 3.0f, 0.0f};  
-		Vec3f lightColor2 = {3.0f, 0.0f, 0.0f};  
-		Vec3f lightColor3 = {0.0f, 0.0f, 3.0f}; 
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3Pad.x); //Light Position
+			glUniform3f( 9, lightColor3Pad.x,lightColor3Pad.y,lightColor3Pad.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3Pad.x,cameraPos3Pad.y,cameraPos3Pad.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.12); //Light Diffuse
 
-		Vec3f cameraPos1 = {0.0f, -1.0f, 1.0f};
-		Vec3f cameraPos2  = {1.0f, 0.0f, 0.0f};
-		Vec3f cameraPos3  = {0.0f, 1.0f, -1.0f};
+			//Draw a single triangle starting at index 0
+			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
-		//Positional Light One
-		glUniform3fv( 2, 1, &light1.x); //Light Position
-		glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
-		glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
+			//Reset state
+			glBindVertexArray(0);
+			glUseProgram(0);
 
-		//Positional Light One
-		glUniform3fv( 5, 1, &light2.x); //Light Position
-		glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
-		glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
+			
+			//Drawing the 3D shapes
+			// -------------
+			glUseProgram(state.spaceVehicle->programId());
 
-		//Positional Light One
-		glUniform3fv( 8, 1, &light3.x); //Light Position
-		glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
-		glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
-		glUniform3f( 11, 0.2, 0.19, 0.18); //Light Diffuse
+			glBindVertexArray(vaoShape);
 
-		OGL_CHECKPOINT_DEBUG();
+			glUniformMatrix4fv(
+				0,
+				1, GL_TRUE, projCameraWorldVehicle.v);
 
-		// Display results
-		glfwSwapBuffers( window );
-		glBindVertexArray(0);
-		glUseProgram(0);
-		
+			GLuint veh = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
+			glUniformMatrix3fv(
+				veh, // make sure this matches the location = N in the vertex shader!
+				1, GL_TRUE, normalMatrix.v
+			);
+
+			glDrawArrays( GL_TRIANGLES, 0, shapevertexCounts); 
+
+			//Lighting uniform values for space vehicle
+			Vec3f light1 = Vec3f{ 0.f, 1.f, -1.f } ;
+			Vec3f light2 = Vec3f{-1.0f, 1.0f, 1.0f}; // Light coming from the left and slightly above
+			Vec3f light3 = Vec3f{1.0f, 0.0f, 1.0f};  // Light coming from the right and slightly in front
+
+			Vec3f lightColor1 = {0.0f, 3.0f, 0.0f};  
+			Vec3f lightColor2 = {3.0f, 0.0f, 0.0f};  
+			Vec3f lightColor3 = {0.0f, 0.0f, 3.0f}; 
+
+			Vec3f cameraPos1 = {0.0f, -1.0f, 1.0f};
+			Vec3f cameraPos2  = {1.0f, 0.0f, 0.0f};
+			Vec3f cameraPos3  = {0.0f, 1.0f, -1.0f};
+
+			//Positional Light One
+			glUniform3fv( 2, 1, &light1.x); //Light Position
+			glUniform3f( 3, lightColor1.x,lightColor1.y,lightColor1.z  ); //Light Diffuse
+			glUniform3f( 4, cameraPos1.x,cameraPos1.y,cameraPos1.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 5, 1, &light2.x); //Light Position
+			glUniform3f( 6, lightColor2.x,lightColor2.y,lightColor2.z  ); //Light Diffuse
+			glUniform3f( 7, cameraPos2.x,cameraPos2.y,cameraPos2.z  ); //Light Diffuse
+
+			//Positional Light One
+			glUniform3fv( 8, 1, &light3.x); //Light Position
+			glUniform3f( 9, lightColor3.x,lightColor3.y,lightColor3.z  ); //Light Diffuse
+			glUniform3f( 10, cameraPos3.x,cameraPos3.y,cameraPos3.z ); //Light Diffuse
+			glUniform3f( 11, 0.2, 0.19, 0.18); //Light Diffuse
+
+			OGL_CHECKPOINT_DEBUG();
+
+			// Display results
+			glBindVertexArray(0);
+			glUseProgram(0);
+
+		}	
+		glfwSwapBuffers(window);
+
+
 	}
+		
+	
+
 
 	// Cleanup.
 	state.pad = nullptr;
 	state.terrain = nullptr;
 	state.spaceVehicle = nullptr;
-
 	
 
+	
 	//TODO: additional cleanup
 
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	
 	return 0;
+
 }
 catch( std::exception const& eErr )
 {
-	std::fprintf( stderr, "Top-level Exception (%s):\n", typeid(eErr).name() );
+	std::fprintf( stderr, "Top-level Exception (%s):\n", typeid(eErr).name() ); 
 	std::fprintf( stderr, "%s\n", eErr.what() );
 	std::fprintf( stderr, "Bye.\n" );
 	return 1;
@@ -919,6 +1278,7 @@ namespace
 					{
 						state->terrain->reload();
 						state->pad->reload();
+						state->spaceVehicle->reload();
 
 
 						std::fprintf( stderr, "Shaders reloaded and recompiled.\n" );
@@ -933,29 +1293,62 @@ namespace
 			}
 			
 			//Controls for animations
-			
-			switch (aKey) {
-				case GLFW_KEY_F:
+			//To animate the spaceship
+			if (aKey == GLFW_KEY_F && aAction == GLFW_PRESS) {
+				
 					state->thrust = true;
-					break;
-			 	case GLFW_KEY_R:
-					state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
-					state->thrust = false;
-					state->bezier = 0.0f;
-					state->rotateSpaceship = 0.0f;
-					state->stopped = false;
-					state->fRotation = 0.0f;
-					break;
+
+			}
+			//To Reload the scene
+			if (aKey == GLFW_KEY_R && aAction == GLFW_PRESS){		
+				state->spaceVehiclePosition = Vec3f{0.f, -0.969504f, -2.5f};
+				state->thrust = false;
+				state->bezier = 0.0f;
+				state->rotateSpaceship = 0.0f;
+				state->stopped = false;
+				state->fRotation = 0.0f;
         	}
+			//To split the screen
+			if (aKey == GLFW_KEY_V && aAction == GLFW_PRESS){
+				if (state->splitScreen){
+					state->splitScreen = false;
+				}else{
+				
+					state->splitScreen = true;
+				}
+				
+			}
 
-			//hardcode the phi and theta values so that the spaceship look at the same angle each time :
+			//Shift C to use the right side of the screen
+			if (aKey == GLFW_KEY_C && aKey && aAction == GLFW_PRESS && state->splitScreen && glfwGetKey(aWindow,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
+				//Control the right side of the screen
+
+				if (state->cameraMode == DEFAULT_CAMERA) 
+					{
+					state->camControlRight.phi = fixedCameraPhi;
+					state->camControlRight.theta = fixedCameraTheta;
+					state->cameraMode = FIXED_DISTANCE_CAMERA;
+				
+					} 
+					else if(state->cameraMode == FIXED_DISTANCE_CAMERA)  
+					{
+						state->camControlRight.groundCameraPosition = {0.0f , 0.3f,  0.0f};
+						state->cameraMode = GROUND_CAMERA;
+					}
+					else
+					state->cameraMode = DEFAULT_CAMERA;
+
+					std::cout << "DDD" << std::endl;	
+					// state->camControlRight;			
+				
+			}
 			
-			const float fixedCameraPhi = 18.0299; // More to the left
-			const float fixedCameraTheta = 0.240; // More upward
-
 			//C key keeps switching for each time
-			if (aKey == GLFW_KEY_C && aAction == GLFW_PRESS) 
+			//for the left side of the screen when splitted 
+			
+			if (aKey != GLFW_KEY_LEFT_SHIFT && aKey == GLFW_KEY_C && aAction == GLFW_PRESS && glfwGetKey(aWindow,GLFW_KEY_LEFT_SHIFT) != GLFW_PRESS) 
 			{
+			
 				if (state->cameraMode == DEFAULT_CAMERA) 
 				{
 				state->camControl.phi = fixedCameraPhi;
