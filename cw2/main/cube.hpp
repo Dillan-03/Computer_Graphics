@@ -8,6 +8,14 @@
 #include "../vmlib/vec3.hpp"
 #include "../vmlib/mat44.hpp"
 
+/* Declaring make_cube function, which takes in 3 parameters
+1. aSubdivs = number of subdivisions in the cube
+2. aColor = colour of the cube
+3. aPreTransform = 4x4 transformation matrix 
+
+- The kCubePositions array contains the positions of the cube's vertices
+- The kCubeColors array contains the colour values for the cube's vertices */
+
 SimpleMeshDataNoTexture make_cube(std::size_t aSubdivs, Vec3f aColor, Mat44f aPreTransform);
 
 

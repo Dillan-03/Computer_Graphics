@@ -10,6 +10,11 @@
 #include "../vmlib/vec3.hpp"
 #include "../vmlib/mat44.hpp"
 
+/* Declaring make_cylinder function, which takes in 4 parameters
+1. bool aCapped = whether the cylinder is closed at the ends (true by default)
+2. std::size_t aSubdivs = number of subdivisions around the cylinder (default is 16)
+3. Vec3f aColor = color of the cylinder 
+4. aPreTransform = 4x4 transformation matrix */
 
 SimpleMeshDataNoTexture make_cylinder(
 	bool aCapped = true,
