@@ -9,6 +9,10 @@
 #include <cmath>
 #include <tuple>
 
+//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+// #include <iostream> 
+//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 #include "../support/error.hpp"
 #include "../support/program.hpp"
 #include "../support/checkpoint.hpp"
@@ -121,7 +125,7 @@ namespace
 		float middleParameter = parameter * parameter; //Used to find the ending point of the curve 
 
 		Vec3f curvePoint = tSquared * startingPoint; //Finds the starting point of the curve and how the curve will go from there
-		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is mre naturally curvy in the middle section
+		curvePoint += 2 * tParameter * parameter * factor; // Ensuring the curve is more naturally curvy in the middle section
 		curvePoint += middleParameter * endingPoint; //Returns a vector which represents a specific point in the curve that the spaceship can follow through
 
 		return curvePoint;
@@ -431,6 +435,78 @@ int main() try
 	GLuint locPadRight = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
 	GLuint locPadSecondRight = glGetUniformLocation(state.pad->programId(), "uNormalMatrix");
 	GLuint vehRight = glGetUniformLocation(state.spaceVehicle->programId(), "uNormalMatrix");
+
+
+	//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+	// // For Benchmarking hold the values of the tests
+    // // Hold values for the following:
+    // // Whole scene 0
+    // // Section 1.2 
+    // // Section 1.4 
+    // // Section 1.5 
+    
+    // // Frame counter of 1000
+    // const int maxFrameCount = 1010;
+    // int frameCounter = 0;
+
+	// // Begin Test 1 of Whole Frame for GPU time 
+    // GLuint queryID[2];
+    // glGenQueries(2, queryID);
+    // // For Test 1 Render Full Scene TimeStamps
+    // double totalRenderingTime = 0.0;
+    // GLuint queryStart, queryEnd;
+    // GLuint64 startTime, endTime;
+    // glGenQueries(1, &queryStart);
+    // glGenQueries(1, &queryEnd);
+
+    // // Test 1 CPU side
+    // double totalCPUTime = 0.0;
+    // std::chrono::high_resolution_clock::time_point startFrame, endFrame;
+    // std::chrono::duration<double, std::milli> durationTime;
+
+    // // Test 2 3D Renderer Basics
+    // GLuint queryRender[2];
+    // glGenQueries(2, queryRender);
+    // double totalRenderingTimeTest2 = 0.0;
+    // GLuint queryStartTest2, queryEndTest2;
+    // GLuint64 startTime2, endTime2;
+    // glGenQueries(1, &queryStartTest2);
+    // glGenQueries(1, &queryEndTest2);
+
+    // // Test 2 CPU side
+    // double totalCPUTime2 = 0.0;
+    // std::chrono::high_resolution_clock::time_point startFrame2, endFrame2;
+    // std::chrono::duration<double, std::milli> durationTime2;
+
+    // // Test 3 Custom Model
+    // GLuint queryModel[2];
+    // glGenQueries(2, queryModel);
+    // double totalRenderingTimeTest3 = 0.0;
+    // GLuint queryStartTest3, queryEndTest3;
+    // GLuint64 startTime3, endTime3;
+    // glGenQueries(1, &queryStartTest3);
+    // glGenQueries(1, &queryEndTest3);
+
+    // // Test 3 CPU side
+    // double totalCPUTime3 = 0.0;
+    // std::chrono::high_resolution_clock::time_point startFrame3, endFrame3;
+    // std::chrono::duration<double, std::milli> durationTime3;
+
+    // // Test 4 Pad
+    // GLuint queryPad[2];
+    // glGenQueries(2, queryPad);
+    // double totalRenderingTimeTest4 = 0.0;
+    // GLuint queryStartTest4, queryEndTest4;
+    // GLuint64 startTime4, endTime4;
+    // glGenQueries(1, &queryStartTest4);
+    // glGenQueries(1, &queryEndTest4);
+
+    // // Test 4 CPU side
+    // double totalCPUTime4 = 0.0;
+    // std::chrono::high_resolution_clock::time_point startFrame4, endFrame4;
+    // std::chrono::duration<double, std::milli> durationTime4;
+	//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 
 	//----------MAIN LOOP----------
 	while( !glfwWindowShouldClose( window ) )
@@ -1061,7 +1137,19 @@ int main() try
 		
 		}else
 		{
+
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// // Full Render Scene GPU
+            // startFrame = std::chrono::high_resolution_clock::now();
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 			OGL_CHECKPOINT_DEBUG();
+
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// glQueryCounter(queryStart, GL_TIMESTAMP); // Full Scene
+            // glQueryCounter(queryStartTest2, GL_TIMESTAMP);    // Test Texturing
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 
 			// Source input as defined in our VAO
 			// Drawing the map
@@ -1093,8 +1181,24 @@ int main() try
 			//Reset state
 			glBindVertexArray(0);
 			glUseProgram(0);
+
+
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// glQueryCounter(queryEndTest2, GL_TIMESTAMP);
+
+            // endFrame2 = std::chrono::high_resolution_clock::now();
+            // durationTime2 = endFrame2 - startFrame2; 
+
+            // totalCPUTime2 += durationTime2.count() ;
+            // double timeTaken2 = (endTime2 - startTime2); 
+            // totalRenderingTimeTest2 += timeTaken2;
 			
-			//----------DRAWING THE PAD----------
+			// //----------DRAWING THE PAD----------
+			// glQueryCounter(queryStartTest4, GL_TIMESTAMP);
+            // startFrame4 = std::chrono::high_resolution_clock::now();
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
+
 			glUseProgram(state.pad->programId());
 
 			glBindVertexArray(vaoPad);
@@ -1152,14 +1256,31 @@ int main() try
 			glUniform3f( 10, cameraPos3Pad.x,cameraPos3Pad.y,cameraPos3Pad.z ); // Camera Position 3
 			glUniform3f( 11, 0.2, 0.19, 0.12); // Uscene ambient light
 
-			//Draw a single triangle starting at index 0
+			// Draw a single triangle starting at index 0
 			glDrawArrays( GL_TRIANGLES, 0, padVertexCount); 
 
-			//Reset state
+			// Reset state
 			glBindVertexArray(0);
 			glUseProgram(0);
 
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// glQueryCounter(queryEndTest4, GL_TIMESTAMP);
+
+			// endFrame4 = std::chrono::high_resolution_clock::now();
+            // durationTime4 = endFrame4 - startFrame4; 
+
+            // totalCPUTime4 += durationTime4.count() ;
+            // double timeTaken4 = (endTime4 - startTime4); 
+            // totalRenderingTimeTest4 += timeTaken4; 
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
+
 			//----------DRAWING THE SPACE VEHICLE----------
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// startFrame3 = std::chrono::high_resolution_clock::now();
+            // glQueryCounter(queryStartTest3, GL_TIMESTAMP); //Full Scene
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 			glUseProgram(state.spaceVehicle->programId());
 
 			glBindVertexArray(vaoShape);
@@ -1209,11 +1330,97 @@ int main() try
 			// Display results
 			glBindVertexArray(0);
 			glUseProgram(0);
+			
+			//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+			// // Model Test 
+            // glQueryCounter(queryEndTest3, GL_TIMESTAMP);
+
+            // endFrame3 = std::chrono::high_resolution_clock::now();
+            // durationTime3 = endFrame3 - startFrame3; 
+
+            // totalCPUTime3 += durationTime3.count() ;
+            // double timeTaken3 = (endTime3 - startTime3); 
+            // totalRenderingTimeTest3 += timeTaken3;
+
+            // glQueryCounter(queryEnd, GL_TIMESTAMP);
+
+            // endFrame = std::chrono::high_resolution_clock::now();
+            // durationTime = endFrame - startFrame; 
+
+            // totalCPUTime += durationTime.count() ;
+            // double timeTaken = (endTime - startTime); // Time in milliseconds
+            // totalRenderingTime += timeTaken;
+			//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 
 		}	
+
+
+		//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+		// // if the frame limit is reached
+		// if (frameCounter >= maxFrameCount){    
+		// 	break;
+		// }
+		// frameCounter++;
+		//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 		glfwSwapBuffers(window);
 	}
-		
+
+	//----------UNCOMMENT BELOW FOR BENCHMARKING------------------------------------------------------------------------------------------
+	// // GPU Side
+	// glGetQueryObjectui64v(queryStart, GL_QUERY_RESULT, &startTime);
+	// glGetQueryObjectui64v(queryEnd, GL_QUERY_RESULT, &endTime);
+	// totalRenderingTime = (endTime - startTime) / 1000000.0; // Convert nanoseconds to milliseconds
+
+	// glGetQueryObjectui64v(queryStartTest2, GL_QUERY_RESULT, &startTime2);
+	// glGetQueryObjectui64v(queryEndTest2, GL_QUERY_RESULT, &endTime2);
+	// totalRenderingTimeTest2 = (endTime2 - startTime2) / 1000000.0;
+
+	// glGetQueryObjectui64v(queryStartTest3, GL_QUERY_RESULT, &startTime3);
+	// glGetQueryObjectui64v(queryEndTest3, GL_QUERY_RESULT, &endTime3);
+	// totalRenderingTimeTest3 = (endTime3 - startTime3) / 1000000.0;
+
+	// glGetQueryObjectui64v(queryStartTest4, GL_QUERY_RESULT, &startTime4);
+	// glGetQueryObjectui64v(queryEndTest4, GL_QUERY_RESULT, &endTime4);
+	// totalRenderingTimeTest4 = (endTime4 - startTime4) / 1000000.0;
+
+	// // Without Movement
+	// std::cout << "No Movement Times \n" << std::endl;
+
+	// // CPU Side
+	// double averageFrameTime = totalCPUTime / maxFrameCount; 
+	// double averageFrameTime2 = totalCPUTime2 / maxFrameCount;
+	// double averageFrameTime3 = totalCPUTime3 / maxFrameCount;
+	// double averageFrameTime4 = totalCPUTime4 / maxFrameCount;
+
+	// std::cout << "CPU" << std::endl;
+	// std::cout << "Total Time to submit rendering commands (Full Screen): " << totalCPUTime << " ms\n";
+	// std::cout << "Frame Time per Frame (FullScreen): " << averageFrameTime << " ms\n";
+	// std::cout << "Total Time to submit rendering commands (Texturing): " << totalCPUTime2 << " ms\n";
+	// std::cout << "Frame Time per Frame (Texturing): " << averageFrameTime2 << " ms\n";
+	// std::cout << "Total Time to submit rendering commands (Model): " << totalCPUTime3 << " ms\n";
+	// std::cout << "Frame Time per Frame (Model): " << averageFrameTime3 << " ms\n";
+	// std::cout << "Total Time to submit rendering commands (Pads): " << totalCPUTime4 << " ms\n";
+	// std::cout << "Frame Time per Frame (Pads): " << averageFrameTime4 << " ms\n";
+
+	// std::cout << "\nGPU " << std::endl;
+
+	// std::cout << "Full Rendering Time (Full Screen)  " << totalRenderingTime  << " ms" << std::endl;
+	// std::cout << "Full Rendering Time (Texturing): " << totalRenderingTimeTest2 << " ms" << std::endl;
+	// std::cout << "Full Rendering Time (Model): " << totalRenderingTimeTest3 << " ms" << std::endl;
+	// std::cout << "Full Rendering Time (Pad): " << totalRenderingTimeTest4 << " ms" << std::endl;
+
+	// glDeleteQueries(1, &queryStart);
+    // glDeleteQueries(1, &queryEnd);
+    // glDeleteQueries(2, &queryStartTest2);
+    // glDeleteQueries(2, &queryEndTest2);
+    // glDeleteQueries(3, &queryStartTest3);
+    // glDeleteQueries(3, &queryEndTest3);
+    // glDeleteQueries(4, &queryStartTest4);
+    // glDeleteQueries(4, &queryEndTest4);
+	//----------UNCOMMENT ABOVE FOR BENCHMARKING------------------------------------------------------------------------------------------
+
 	//----------CLEANUP----------
 	state.pad = nullptr;
 	state.terrain = nullptr;
@@ -1294,8 +1501,8 @@ namespace
 			}
 
 			// Changing camera modes when split screen is on
-			// This is when the user presses the C key while holding the left shift key
-			if (aKey == GLFW_KEY_C && aKey && aAction == GLFW_PRESS && state->splitScreen && glfwGetKey(aWindow,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+			// This is when the user presses the C key while holding the shift key which controls the right side of the screen
+			if (aKey == GLFW_KEY_C && aKey && aAction == GLFW_PRESS && state->splitScreen && ((glfwGetKey(aWindow,GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) || (glfwGetKey(aWindow,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS))) {
 				// Control the right side of the screen
 				// If in default camera mode then switch to fixed distance camera 
 				if (state->cameraMode == DEFAULT_CAMERA) 
