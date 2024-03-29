@@ -1,4 +1,4 @@
-# Computer Graphics CWK2 
+# COMP3811 Computer Graphics CWK2 
 ### Useful Websites:
 https://learnopengl.com/Getting-started/Textures
 
